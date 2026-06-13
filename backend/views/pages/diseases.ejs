@@ -1,0 +1,118 @@
+<%- include('../partials/head', { title: 'Disease Management' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'diseases' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Disease Management' }) %>
+    <div class="page-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h5 class="mb-0 text-green">Disease Management</h5><small class="text-muted"><%=diseases.length%> diseases &middot; <%=categories.length%> categories</small></div>
+        <button class="btn btn-primary btn-sm" onclick="openAddDisease()"><i class="bi bi-plus me-1"></i>Add Disease</button>
+      </div>
+      <div class="card mb-3"><div class="card-body py-2">
+        <form method="GET"><input type="text" name="search" class="form-control form-control-sm" placeholder="Search diseases…" value="<%=filters.search||''%>"/></form>
+      </div></div>
+      <% const grouped = {}; diseases.forEach(d=>{ if(!grouped[d.category_name]) grouped[d.category_name]=[]; grouped[d.category_name].push(d); }); %>
+      <% Object.entries(grouped).forEach(([cat, list])=>{ %>
+      <div class="card mb-2">
+        <div class="card-header d-flex align-items-center gap-2" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#cat_<%=cat.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')%>">
+          <i class="bi bi-hospital text-green"></i>
+          <span class="fw-semibold"><%=cat%></span>
+          <span class="badge bg-primary ms-1"><%=list.length%></span>
+          <i class="bi bi-chevron-down ms-auto"></i>
+        </div>
+        <div class="collapse" id="cat_<%=cat.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')%>">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Disease</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                <% list.forEach(d=>{ %>
+                <tr>
+                  <td><span class="fw-medium" style="font-size:13px;"><%=d.disease_name%></span></td>
+                  <td><small class="text-muted"><%=d.description||'—'%></small></td>
+                  <td><span class="badge <%=d.is_active?'bg-success':'bg-secondary'%>"><%=d.is_active?'Active':'Inactive'%></span></td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editDisease(<%= JSON.stringify(d) %>)"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm <%=d.is_active?'btn-outline-danger':'btn-outline-success'%>" onclick="toggleDisease(<%=d.disease_id%>)">
+                      <i class="bi <%=d.is_active?'bi-slash-circle':'bi-check-circle'%>"></i>
+                    </button>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="addDiseaseModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="disModalTitle">Add Disease</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <form id="diseaseForm"><input type="hidden" id="diseaseId"/>
+      <div class="modal-body row g-2">
+        <div class="col-12"><label class="form-label">Category *</label>
+          <select id="dissCatSelect" class="form-select" onchange="onCatChange()" required>
+            <option value="">Select category…</option>
+            <% categories.forEach(c=>{ %><option value="<%=c.category_name%>"><%=c.category_name%></option><% }) %>
+            <option value="__new__">➕ Add new category…</option>
+          </select>
+          <input type="text" id="dissCatNew" class="form-control mt-2 d-none" placeholder="New category name"/>
+        </div>
+        <div class="col-12"><label class="form-label">Disease Name *</label><input type="text" name="disease_name" id="dissName" class="form-control" required/></div>
+        <div class="col-12"><label class="form-label">Description</label><textarea name="description" id="dissDesc" class="form-control" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary btn-sm">Save</button></div>
+    </form>
+  </div></div>
+</div>
+<script>
+let editingDiseaseId = null;
+const catSelect = document.getElementById('dissCatSelect');
+const catNew = document.getElementById('dissCatNew');
+
+function onCatChange() {
+  if (catSelect.value === '__new__') { catNew.classList.remove('d-none'); catNew.focus(); }
+  else { catNew.classList.add('d-none'); catNew.value = ''; }
+}
+
+function openAddDisease() {
+  editingDiseaseId = null;
+  document.getElementById('disModalTitle').textContent = 'Add Disease';
+  document.getElementById('diseaseForm').reset();
+  catNew.classList.add('d-none');
+  openModal('addDiseaseModal');
+}
+
+function editDisease(d) {
+  editingDiseaseId = d.disease_id;
+  document.getElementById('disModalTitle').textContent = 'Edit Disease';
+  // select the existing category, or fall back to the "new" field
+  catSelect.value = d.category_name;
+  if (catSelect.value !== d.category_name) {
+    catSelect.value = '__new__'; catNew.classList.remove('d-none'); catNew.value = d.category_name;
+  } else { catNew.classList.add('d-none'); catNew.value = ''; }
+  document.getElementById('dissName').value = d.disease_name;
+  document.getElementById('dissDesc').value = d.description||'';
+  openModal('addDiseaseModal');
+}
+
+document.getElementById('diseaseForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(this));
+  // resolve category from the select (or the new-category field)
+  data.category_name = catSelect.value === '__new__' ? catNew.value.trim() : catSelect.value;
+  if (!data.category_name) { showToast('Please choose or enter a category', 'error'); return; }
+  try {
+    if (editingDiseaseId) { await API.put('/api/diseases/'+editingDiseaseId, data); }
+    else { await API.post('/api/diseases', data); }
+    showToast('Saved'); closeModal('addDiseaseModal'); location.reload();
+  } catch(err) { showToast(err.message,'error'); }
+});
+async function toggleDisease(id) {
+  await API.patch('/api/diseases/'+id+'/toggle-status');
+  location.reload();
+}
+</script>
+<%- include('../partials/scripts') %>

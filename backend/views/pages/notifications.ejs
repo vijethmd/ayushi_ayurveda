@@ -1,0 +1,40 @@
+<%- include('../partials/head', { title: 'Notifications' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: '' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Notifications' }) %>
+    <div class="page-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h5 class="mb-0 text-green">Notifications</h5><small class="text-muted"><%=unread%> unread</small></div>
+        <% if (unread > 0) { %>
+        <form method="POST" action="/notifications/read-all"><button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-check-all me-1"></i>Mark All Read</button></form>
+        <% } %>
+      </div>
+      <div class="card">
+        <% if (!notifications.length) { %>
+        <div class="text-center py-5 text-muted"><i class="bi bi-bell" style="font-size:48px;opacity:0.3;"></i><p class="mt-2">No notifications</p></div>
+        <% } %>
+        <% const typeIcon={info:'bi-info-circle text-primary',success:'bi-check-circle text-success',warning:'bi-exclamation-triangle text-warning',ai:'bi-robot text-warning',reminder:'bi-clock text-purple'}; %>
+        <% notifications.forEach((n,i)=>{ %>
+        <div class="d-flex gap-3 px-3 py-3 <%=i<notifications.length-1?'border-bottom':''%>" style="background:<%=n.is_read?'transparent':'#f8fcf9'%>;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#f0f7f3;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi <%=typeIcon[n.type]||'bi-bell text-primary'%>"></i>
+          </div>
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2">
+              <span class="fw-semibold" style="font-size:13px;"><%=n.title%></span>
+              <% if (!n.is_read) { %><span class="badge bg-primary" style="font-size:9px;">New</span><% } %>
+            </div>
+            <div class="text-muted" style="font-size:12px;"><%=n.message%></div>
+            <small class="text-muted" style="font-size:11px;"><%=new Date(n.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})%></small>
+          </div>
+          <% if (!n.is_read) { %>
+          <form method="POST" action="/notifications/<%=n.notification_id%>/read"><button type="submit" class="btn btn-sm btn-outline-success" title="Mark read"><i class="bi bi-check"></i></button></form>
+          <% } %>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/scripts') %>

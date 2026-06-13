@@ -1,0 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const { generateClinicalInsights, generatePatientSummary, generateDropoutRisk, generateDiseaseIntelligence, generateDoctorInsights, getAIReports } = require('../controllers/aiController');
+const { authenticate } = require('../middleware/auth');
+router.get('/reports', authenticate, getAIReports);
+router.post('/clinical-insights', authenticate, generateClinicalInsights);
+router.post('/patient-summary/:patientId', authenticate, generatePatientSummary);
+router.post('/dropout-risk/:patientId', authenticate, generateDropoutRisk);
+router.post('/disease-intelligence/:diseaseId', authenticate, generateDiseaseIntelligence);
+router.post('/doctor-insights/:doctorId', authenticate, generateDoctorInsights);
+module.exports = router;

@@ -1,0 +1,82 @@
+<nav id="sidebar" class="sidebar d-flex flex-column">
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-icon"><i class="bi bi-flower2"></i></div>
+    <div>
+      <div class="logo-name">AYUSHI</div>
+      <div class="logo-sub">AYURVEDIC CLINIC</div>
+    </div>
+  </div>
+
+  <hr class="sidebar-divider"/>
+
+  <!-- Nav -->
+  <ul class="sidebar-nav flex-grow-1">
+    <% if (user.role === 'admin') { %>
+    <li><a href="/doctors" class="<%= currentPage==='doctors'?'active':'' %>">
+      <i class="bi bi-person-badge"></i> Doctor Management
+    </a></li>
+    <li><a href="/doctor-requests" class="<%= currentPage==='doctor-requests'?'active':'' %>">
+      <i class="bi bi-person-plus"></i> Join Requests
+      <% if (typeof pendingRequests !== 'undefined' && pendingRequests > 0) { %>
+      <span class="badge bg-danger rounded-pill ms-1"><%= pendingRequests %></span>
+      <% } %>
+    </a></li>
+    <hr class="sidebar-divider"/>
+    <% } %>
+
+    <li><a href="/dashboard" class="<%= currentPage==='dashboard'?'active':'' %>">
+      <i class="bi bi-speedometer2"></i> Clinic Dashboard
+    </a></li>
+    <li><a href="/my-dashboard" class="<%= currentPage==='my-dashboard'?'active':'' %>">
+      <i class="bi bi-person-lines-fill"></i> My Dashboard
+    </a></li>
+
+    <hr class="sidebar-divider"/>
+
+    <li><a href="/patients" class="<%= currentPage==='patients'?'active':'' %>">
+      <i class="bi bi-people"></i> All Patients
+    </a></li>
+    <li><a href="/treatments" class="<%= currentPage==='treatments'?'active':'' %>">
+      <i class="bi bi-heart-pulse"></i> Treatments
+    </a></li>
+    <li><a href="/followups" class="<%= currentPage==='followups'?'active':'' %>">
+      <i class="bi bi-calendar-check"></i> Follow-Ups
+    </a></li>
+
+    <hr class="sidebar-divider"/>
+
+    <li><a href="/drug-research" class="<%= currentPage==='drug-research'?'active':'' %>">
+      <i class="bi bi-capsule"></i> Drug Research
+    </a></li>
+    <li><a href="/disease-intelligence" class="<%= currentPage==='disease-intelligence'?'active':'' %>">
+      <i class="bi bi-graph-up"></i> Disease Intelligence
+    </a></li>
+    <li><a href="/analytics" class="<%= currentPage==='analytics'?'active':'' %>">
+      <i class="bi bi-bar-chart-line"></i> Analytics
+    </a></li>
+    <li><a href="/ai-insights" class="<%= currentPage==='ai-insights'?'active':'' %>">
+      <i class="bi bi-robot"></i> AI Insights
+    </a></li>
+
+    <hr class="sidebar-divider"/>
+
+    <li><a href="/diseases" class="<%= currentPage==='diseases'?'active':'' %>">
+      <i class="bi bi-hospital"></i> Diseases
+    </a></li>
+    <li><a href="/reports" class="<%= currentPage==='reports'?'active':'' %>">
+      <i class="bi bi-file-pdf"></i> Reports
+    </a></li>
+  </ul>
+
+  <!-- User -->
+  <hr class="sidebar-divider"/>
+  <div class="sidebar-user">
+    <div class="user-avatar"><%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %></div>
+    <div class="user-info">
+      <div class="user-name"><%= user.name %></div>
+      <div class="user-role"><%= user.role %></div>
+    </div>
+    <a href="/logout" class="logout-btn" title="Logout"><i class="bi bi-box-arrow-right"></i></a>
+  </div>
+</nav>

@@ -1,0 +1,199 @@
+<%- include('../partials/head', { title: 'Clinic Dashboard' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'dashboard' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Clinic Dashboard' }) %>
+    <div class="page-body">
+
+      <!-- Stat Cards -->
+      <div class="row g-3 mb-4">
+        <% const stats = [
+          { label:'Total Patients',   value: data.stats.total_patients,  icon:'bi-people',         color:'#4a7c59', bg:'#e8f5e9' },
+          { label:'Active Patients',  value: data.stats.active_patients,  icon:'bi-heart-pulse',    color:'#2980b9', bg:'#e3f2fd' },
+          { label:'Cured Patients',   value: data.stats.cured_patients,   icon:'bi-check-circle',   color:'#27ae60', bg:'#e8f5e9' },
+          { label:'Left Treatment',   value: data.stats.left_patients,    icon:'bi-box-arrow-right',color:'#e67e22', bg:'#fff3e0' },
+          { label:'Active Doctors',   value: data.stats.total_doctors,    icon:'bi-person-badge',   color:'#8e44ad', bg:'#f3e5f5' },
+        ]; %>
+        <% stats.forEach(s => { %>
+        <div class="col-6 col-md-4 col-xl">
+          <div class="stat-card h-100">
+            <div class="stat-icon" style="background:<%=s.bg%>;">
+              <i class="bi <%=s.icon%>" style="color:<%=s.color%>;"></i>
+            </div>
+            <div>
+              <div class="stat-value" style="color:<%=s.color%>;"><%=s.value||0%></div>
+              <div class="stat-label"><%=s.label%></div>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">Patient Distribution</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:230px;">
+              <canvas id="statusPie"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">Monthly Patient Registrations</div>
+            <div class="card-body" style="height:230px;">
+              <canvas id="monthlyBar"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">Recovery Trend</div>
+            <div class="card-body" style="height:220px;">
+              <canvas id="recoveryLine"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">Top Diseases</div>
+            <div class="card-body" style="height:220px;">
+              <canvas id="diseaseBar"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="row g-3">
+        <!-- Top Doctors -->
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">Top Doctors by Cure Rate</div>
+            <div class="card-body p-0">
+              <% (data.charts.topDoctors||[]).slice(0,5).forEach(d => { %>
+              <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+                <div class="pat-avatar" style="background:#e8f5e9;color:#4a7c59;"><%=d.name.charAt(0)%></div>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="fw-semibold text-truncate" style="font-size:13px;"><%=d.name%></div>
+                  <div class="text-muted" style="font-size:11px;"><%=d.specialization||''%></div>
+                </div>
+                <span class="badge" style="background:#e8f5e9;color:#2e7d32;"><%=d.cure_rate||0%>%</span>
+              </div>
+              <% }) %>
+              <% if (!data.charts.topDoctors?.length) { %>
+              <p class="text-muted text-center py-4 mb-0 small">No data yet</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming Followups -->
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span class="fw-semibold">Upcoming Follow-Ups</span>
+              <a href="/followups" class="btn btn-sm btn-outline-primary" style="font-size:11px;">View All</a>
+            </div>
+            <div class="card-body p-0" style="max-height:260px;overflow-y:auto;">
+              <% (data.upcomingFollowups||[]).slice(0,6).forEach(f => { %>
+              <div class="d-flex gap-2 px-3 py-2 border-bottom align-items-start">
+                <div class="pat-avatar" style="background:#e3f2fd;color:#1565c0;font-size:14px;"><i class="bi bi-calendar-check"></i></div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;"><%=f.patient_name%></div>
+                  <div class="text-muted" style="font-size:11px;"><%=f.disease_name%> &middot; <%=f.followup_date%></div>
+                </div>
+              </div>
+              <% }) %>
+              <% if (!data.upcomingFollowups?.length) { %>
+              <p class="text-muted text-center py-4 mb-0 small">No upcoming follow-ups</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">Recent Activity</div>
+            <div class="card-body p-0" style="max-height:260px;overflow-y:auto;">
+              <% (data.recentActivity||[]).slice(0,8).forEach(e => { %>
+              <div class="d-flex gap-2 px-3 py-2 border-bottom align-items-start">
+                <div style="width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;background:<%=
+                  e.event_type==='registration'?'#4a7c59':e.event_type==='treatment_started'?'#2980b9':
+                  e.event_type==='followup'?'#c9a84c':e.event_type==='treatment_completed'?'#27ae60':'#95a5a6'
+                %>;"></div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;"><%=e.event_title%></div>
+                  <div class="text-muted" style="font-size:11px;"><%=e.patient_name%> &middot; <%=new Date(e.event_date).toLocaleDateString('en-IN')%></div>
+                </div>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- page-body -->
+  </div><!-- main-content -->
+</div>
+
+<script>
+const chartData = <%- JSON.stringify(data.charts) %>;
+
+// Status Pie
+new Chart(document.getElementById('statusPie'), {
+  type: 'doughnut',
+  data: {
+    labels: (chartData.statusDistribution||[]).map(s=>s.status),
+    datasets: [{ data: (chartData.statusDistribution||[]).map(s=>s.count),
+      backgroundColor: ['#4a7c59','#c9a84c','#27ae60','#e74c3c'], borderWidth: 2 }]
+  },
+  options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+});
+
+// Monthly Bar
+const monthly = (chartData.monthlyRegistrations||[]);
+new Chart(document.getElementById('monthlyBar'), {
+  type: 'bar',
+  data: {
+    labels: monthly.map(m=>m.month),
+    datasets: [{ label:'New Patients', data: monthly.map(m=>m.count),
+      backgroundColor: '#4a7c59', borderRadius: 4 }]
+  },
+  options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } }
+});
+
+// Recovery Line
+const recovery = (chartData.recoveryTrend||[]);
+new Chart(document.getElementById('recoveryLine'), {
+  type: 'line',
+  data: {
+    labels: recovery.map(r=>r.month),
+    datasets: [{ label:'Cured', data: recovery.map(r=>r.cured),
+      borderColor:'#4a7c59', backgroundColor:'rgba(74,124,89,0.08)',
+      tension: 0.4, fill: true, pointRadius: 4 }]
+  },
+  options: { responsive:true, maintainAspectRatio:false }
+});
+
+// Disease Bar
+const diseases = (chartData.diseaseDistribution||[]).slice(0,8);
+new Chart(document.getElementById('diseaseBar'), {
+  type: 'bar',
+  data: {
+    labels: diseases.map(d=>d.disease_name),
+    datasets: [{ label:'Patients', data: diseases.map(d=>d.count),
+      backgroundColor: '#c9a84c', borderRadius: 4 }]
+  },
+  options: { responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    plugins:{ legend:{ display:false } } }
+});
+</script>
+
+<%- include('../partials/scripts') %>

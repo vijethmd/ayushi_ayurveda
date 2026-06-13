@@ -1,0 +1,53 @@
+<%- include('../partials/head', { title: 'Patient Timeline' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'patients' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Patient Timeline' }) %>
+    <div class="page-body">
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/patients/<%=patient.patient_id%>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+        <div class="pat-avatar" style="width:40px;height:40px;font-size:16px;"><%=patient.name.charAt(0)%></div>
+        <div><h6 class="mb-0 text-green"><%=patient.name%> — Timeline</h6><small class="text-muted"><%=patient.patient_code%> &middot; <%=total%> events</small></div>
+      </div>
+      <div class="card mb-3"><div class="card-body py-2">
+        <form method="GET" class="row g-2">
+          <div class="col-sm-5"><input type="text" name="search" class="form-control form-control-sm" placeholder="Search events…" value="<%=filters.search||''%>"/></div>
+          <div class="col-sm-4">
+            <select name="event_type" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="">All Events</option>
+              <% [['registration','Registration'],['treatment_started','Treatment Started'],['followup','Follow-Up'],['treatment_completed','Completed'],['left_treatment','Left Treatment'],['status_changed','Status Change'],['ai_report','AI Report'],['medicine_updated','Medicine Updated']].forEach(([v,l])=>{ %>
+              <option value="<%=v%>" <%=filters.event_type===v?'selected':''%>><%=l%></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-sm-3 d-flex gap-1"><button type="submit" class="btn btn-primary btn-sm flex-grow-1">Filter</button><a href="/timeline/<%=patient.patient_id%>" class="btn btn-outline-secondary btn-sm">Clear</a></div>
+        </form>
+      </div></div>
+      <div class="timeline">
+        <% const icons={registration:'👤',treatment_started:'💊',followup:'📋',treatment_completed:'✅',left_treatment:'⚠️',status_changed:'📊',ai_report:'🤖',medicine_updated:'🌿'}; %>
+        <% events.forEach(e=>{ %>
+        <div class="timeline-item">
+          <div class="timeline-dot"><%=icons[e.event_type]||'•'%></div>
+          <div class="timeline-card">
+            <div class="d-flex justify-content-between align-items-start">
+              <span class="fw-semibold" style="font-size:13px;"><%=e.event_title%></span>
+              <small class="text-muted ms-2 text-nowrap"><%=new Date(e.event_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})%> <%=new Date(e.event_date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})%></small>
+            </div>
+            <% if (e.event_description) { %><p class="text-muted mb-0 mt-1" style="font-size:12px;"><%=e.event_description%></p><% } %>
+            <% if (e.created_by_name) { %><small class="text-muted" style="font-size:10px;">By: <%=e.created_by_name%></small><% } %>
+          </div>
+        </div>
+        <% }) %>
+        <% if (!events.length) { %><p class="text-muted text-center py-5">No timeline events found.</p><% } %>
+      </div>
+      <% if (totalPages > 1) { %>
+      <div class="d-flex justify-content-center gap-2 mt-3">
+        <% if (currentPage>1) { %><a href="?page=<%=currentPage-1%>&search=<%=filters.search||''%>&event_type=<%=filters.event_type||''%>" class="btn btn-sm btn-outline-primary">← Previous</a><% } %>
+        <span class="btn btn-sm disabled">Page <%=currentPage%> of <%=totalPages%></span>
+        <% if (currentPage<totalPages) { %><a href="?page=<%=currentPage+1%>&search=<%=filters.search||''%>&event_type=<%=filters.event_type||''%>" class="btn btn-sm btn-outline-primary">Next →</a><% } %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/scripts') %>

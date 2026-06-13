@@ -1,0 +1,31 @@
+<%- include('../partials/head', { title: 'Analytics' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'analytics' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Analytics Dashboard' }) %>
+    <div class="page-body">
+      <div class="row g-3 mb-3">
+        <div class="col-12"><div class="card"><div class="card-header fw-semibold">Treatment Performance by Disease Category</div><div class="card-body" style="height:280px;"><canvas id="catChart"></canvas></div></div></div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4"><div class="card h-100"><div class="card-header fw-semibold">Age Distribution</div><div class="card-body d-flex align-items-center justify-content-center" style="height:220px;"><canvas id="agePie"></canvas></div></div></div>
+        <div class="col-md-4"><div class="card h-100"><div class="card-header fw-semibold">Gender Distribution</div><div class="card-body d-flex align-items-center justify-content-center" style="height:220px;"><canvas id="genderPie"></canvas></div></div></div>
+        <div class="col-md-4"><div class="card h-100"><div class="card-header fw-semibold">Yearly Growth</div><div class="card-body" style="height:220px;"><canvas id="yearlyLine"></canvas></div></div></div>
+      </div>
+      <div class="card"><div class="card-header fw-semibold">Dropout Pattern by Treatment Month</div><div class="card-body" style="height:200px;"><canvas id="dropoutBar"></canvas></div></div>
+    </div>
+  </div>
+</div>
+<script>
+const cat=<%- JSON.stringify(categoryStats||[]) %>;
+new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cat.map(c=>c.category_name),datasets:[{label:'Cured',data:cat.map(c=>c.cured),backgroundColor:'#4a7c59',borderRadius:4},{label:'Dropout',data:cat.map(c=>c.dropout),backgroundColor:'#e74c3c',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false}});
+const age=<%- JSON.stringify(ageGroup||[]) %>;
+new Chart(document.getElementById('agePie'),{type:'pie',data:{labels:age.map(a=>a.age_group),datasets:[{data:age.map(a=>a.count),backgroundColor:['#4a7c59','#c9a84c','#2980b9','#e74c3c','#8e44ad']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+const gen=<%- JSON.stringify(genderDist||[]) %>;
+new Chart(document.getElementById('genderPie'),{type:'pie',data:{labels:gen.map(g=>g.gender),datasets:[{data:gen.map(g=>g.count),backgroundColor:['#4a7c59','#c9a84c','#2980b9']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+const yr=<%- JSON.stringify(yearlyGrowth||[]) %>;
+new Chart(document.getElementById('yearlyLine'),{type:'line',data:{labels:yr.map(y=>y.year),datasets:[{label:'Patients',data:yr.map(y=>y.patients),borderColor:'#4a7c59',tension:0.4},{label:'Cured',data:yr.map(y=>y.cured),borderColor:'#c9a84c',tension:0.4}]},options:{responsive:true,maintainAspectRatio:false}});
+const dr=<%- JSON.stringify(dropoutAnalysis||[]) %>;
+new Chart(document.getElementById('dropoutBar'),{type:'bar',data:{labels:dr.map(d=>'Month '+d.month_number),datasets:[{label:'Dropouts',data:dr.map(d=>d.dropouts),backgroundColor:'#e74c3c',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+</script>
+<%- include('../partials/scripts') %>

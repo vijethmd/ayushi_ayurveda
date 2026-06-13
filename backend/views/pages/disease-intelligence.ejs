@@ -1,0 +1,37 @@
+<%- include('../partials/head', { title: 'Disease Intelligence' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'disease-intelligence' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Disease Intelligence' }) %>
+    <div class="page-body">
+      <div class="mb-3"><h5 class="text-green mb-0">Disease Intelligence</h5><small class="text-muted">Clinical research insights across <%=diseases.length%> diseases</small></div>
+      <div class="card mb-3"><div class="card-body py-2">
+        <form method="GET"><input type="text" name="search" class="form-control form-control-sm" placeholder="Search diseases or categories…" value="<%=filters.search||''%>"/></form>
+      </div></div>
+      <div class="row g-3">
+        <% diseases.forEach(d=>{ const cr=d.cure_rate||0; const col=cr>=70?'#27ae60':cr>=50?'#f39c12':'#e74c3c'; %>
+        <div class="col-sm-6 col-md-4 col-xl-3">
+          <a href="/disease-intelligence/<%=d.disease_id%>" class="text-decoration-none">
+            <div class="drug-card">
+              <div class="d-flex justify-content-between mb-2">
+                <span class="badge bg-light text-primary border" style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%=d.category_name%></span>
+                <span class="badge" style="background:<%=col%>;color:#fff;"><%=cr%>%</span>
+              </div>
+              <div class="fw-semibold mb-2" style="font-family:'Playfair Display',serif;color:#2d5c3e;"><%=d.disease_name%></div>
+              <div class="row g-1 mb-2">
+                <div class="col-4 text-center"><div style="font-size:15px;font-weight:700;color:#2d5c3e;"><%=d.total_patients||0%></div><div style="font-size:10px;color:#888;">Total</div></div>
+                <div class="col-4 text-center"><div style="font-size:15px;font-weight:700;color:#2980b9;"><%=d.active_patients||0%></div><div style="font-size:10px;color:#888;">Active</div></div>
+                <div class="col-4 text-center"><div style="font-size:15px;font-weight:700;color:#27ae60;"><%=d.cured_patients||0%></div><div style="font-size:10px;color:#888;">Cured</div></div>
+              </div>
+              <div class="efficacy-bar"><div class="efficacy-fill" style="width:<%=cr%>%;background:<%=col%>;"></div></div>
+              <small class="text-muted" style="font-size:10px;">Cure Rate <%=cr%>%</small>
+            </div>
+          </a>
+        </div>
+        <% }) %>
+        <% if (!diseases.length) { %><div class="col-12 text-center py-5 text-muted">No diseases found</div><% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/scripts') %>

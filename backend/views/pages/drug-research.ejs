@@ -1,0 +1,85 @@
+<%- include('../partials/head', { title: 'Drug Research' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'drug-research' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Drug Research Centre' }) %>
+    <div class="page-body">
+      <div class="mb-3"><h5 class="text-green mb-0">Drug Research Centre</h5><small class="text-muted">Cure-rate &amp; usage of <%=drugs.length%> Ayurvedic drugs (from treatment records)</small></div>
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#libraryTab"><i class="bi bi-capsule me-1"></i>Drug Library</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#analyticsTab" id="analyticsTabBtn"><i class="bi bi-bar-chart me-1"></i>Analytics</a></li>
+      </ul>
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="libraryTab">
+          <div class="card mb-3"><div class="card-body py-2">
+            <form method="GET" class="row g-2">
+              <div class="col-sm-5"><input type="text" name="search" class="form-control form-control-sm" placeholder="Search drugs…" value="<%=filters.search||''%>"/></div>
+              <div class="col-sm-4">
+                <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                  <option value="">All Categories</option>
+                  <% categories.forEach(c=>{ %><option value="<%=c.category%>" <%=filters.category===c.category?'selected':''%>><%=c.category%> (<%=c.count%>)</option><% }) %>
+                </select>
+              </div>
+              <div class="col-sm-3 d-flex gap-1"><button type="submit" class="btn btn-primary btn-sm flex-grow-1">Filter</button><a href="/drug-research" class="btn btn-outline-secondary btn-sm">Clear</a></div>
+            </form>
+          </div></div>
+          <div class="row g-3">
+            <% drugs.forEach(d=>{ const eff=d.avg_efficacy; const col=eff>=75?'#27ae60':eff>=50?'#f39c12':eff?'#e74c3c':'#95a5a6'; %>
+            <div class="col-sm-6 col-md-4 col-xl-3">
+              <a href="/drug-research/<%=d.drug_id%>" class="text-decoration-none">
+                <div class="drug-card">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="badge bg-light text-primary border" style="font-size:10px;"><%=d.category||'General'%></span>
+                    <% if (eff) { %><span class="badge" style="background:<%=col%>;color:#fff;"><%=eff%>% cured</span><% } %>
+                  </div>
+                  <div class="fw-semibold mb-1" style="font-family:'Playfair Display',serif;color:#2d5c3e;"><%=d.name%></div>
+                  <div class="text-muted mb-2" style="font-size:11px;min-height:28px;"><%=(d.traditional_use||'').slice(0,65)%><%=(d.traditional_use||'').length>65?'…':''%></div>
+                  <div class="row g-1 mb-2">
+                    <div class="col-6 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:3px 0;"><div style="font-size:14px;font-weight:700;color:#2d5c3e;"><%=d.times_prescribed||0%></div><div style="font-size:10px;color:#888;">Prescribed</div></div></div>
+                    <div class="col-6 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:3px 0;"><div style="font-size:14px;font-weight:700;color:#2d5c3e;"><%=d.treatments_used||0%></div><div style="font-size:10px;color:#888;">Patients</div></div></div>
+                  </div>
+                  <% if (eff) { %>
+                  <div class="efficacy-bar"><div class="efficacy-fill" style="width:<%=eff%>%;background:<%=col%>;"></div></div>
+                  <small class="text-muted" style="font-size:10px;">Cure rate <%=eff%>%</small>
+                  <% } %>
+                </div>
+              </a>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="analyticsTab">
+          <div id="analyticsContent"><div class="text-center py-5"><span class="spinner-border text-success"></span><p class="mt-2 text-muted">Loading analytics…</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById('analyticsTabBtn').addEventListener('click', async function() {
+  const el = document.getElementById('analyticsContent');
+  if (el.dataset.loaded) return;
+  try {
+    const r = await API.get('/api/drugs/analytics');
+    const { topEfficacy, mostPrescribed, byCategory, drugDisease, overall } = r;
+    el.innerHTML = `
+    <div class="row g-2 mb-3">
+      ${[['Total Drugs',overall.total_drugs,'#4a7c59'],['Prescriptions',overall.total_prescriptions,'#2980b9'],['Outcomes Recorded',overall.outcomes_recorded,'#27ae60'],['Avg Efficacy',(overall.overall_avg_efficacy||'—')+'%','#c9a84c']].map(([l,v,c])=>`
+      <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body py-2"><div style="font-size:22px;font-weight:700;color:${c};font-family:'Playfair Display',serif;">${v}</div><div class="text-muted" style="font-size:12px;">${l}</div></div></div></div>`).join('')}
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-6"><div class="card"><div class="card-header fw-semibold">Top Drugs by Efficacy</div><div class="card-body" style="height:220px;"><canvas id="effChart"></canvas></div></div></div>
+      <div class="col-md-6"><div class="card"><div class="card-header fw-semibold">Most Prescribed</div><div class="card-body" style="height:220px;"><canvas id="prescChart"></canvas></div></div></div>
+    </div>
+    <div class="card"><div class="card-header fw-semibold">Drug-Disease Efficacy Matrix</div>
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Drug</th><th>Disease</th><th>Cases</th><th>Efficacy</th><th>Cured</th></tr></thead>
+      <tbody>${(drugDisease||[]).map(r=>`<tr><td><b style="font-size:12px;">${r.drug_name}</b></td><td><small>${r.disease_name}</small></td><td><small>${r.prescriptions}</small></td><td>${r.avg_efficacy?`<span style="font-size:12px;font-weight:600;color:${r.avg_efficacy>=75?'#27ae60':r.avg_efficacy>=50?'#f39c12':'#e74c3c'}">${r.avg_efficacy}%</span>`:'—'}</td><td><small style="color:#27ae60;font-weight:600;">${r.cured_cases}</small></td></tr>`).join('')}</tbody>
+    </table></div></div>`;
+    el.dataset.loaded = '1';
+    if (topEfficacy.length) new Chart(document.getElementById('effChart'),{type:'bar',data:{labels:topEfficacy.map(x=>x.name),datasets:[{label:'Avg Efficacy %',data:topEfficacy.map(x=>x.avg_efficacy),backgroundColor:topEfficacy.map(x=>x.avg_efficacy>=75?'#27ae60':x.avg_efficacy>=50?'#f39c12':'#e74c3c'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+    if (mostPrescribed.length) new Chart(document.getElementById('prescChart'),{type:'bar',data:{labels:mostPrescribed.map(x=>x.name),datasets:[{label:'Prescriptions',data:mostPrescribed.map(x=>x.prescriptions),backgroundColor:'#4a7c59',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+  } catch(e) { el.innerHTML='<div class="alert alert-danger">'+e.message+'</div>'; }
+});
+</script>
+<%- include('../partials/scripts') %>

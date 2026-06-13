@@ -1,0 +1,12 @@
+const express = require('express');
+const router  = express.Router();
+const { getAllPatients, getPatientById, createPatient, updatePatient, deletePatient, searchPatients, getMyPatientStats } = require('../controllers/patientController');
+const { authenticate } = require('../middleware/auth');
+router.get('/search',    authenticate, searchPatients);
+router.get('/my-stats',  authenticate, getMyPatientStats);
+router.get('/',          authenticate, getAllPatients);
+router.get('/:id',       authenticate, getPatientById);
+router.post('/',         authenticate, createPatient);
+router.put('/:id',       authenticate, updatePatient);
+router.delete('/:id',    authenticate, deletePatient);
+module.exports = router;

@@ -1,0 +1,39 @@
+<%- include('../partials/head', { title: 'Follow-Ups' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'followups' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Follow-Up Management' }) %>
+    <div class="page-body">
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-icon" style="background:#e3f2fd;"><i class="bi bi-calendar-check" style="color:#2980b9;"></i></div><div><div class="stat-value" style="color:#2980b9;"><%=upcoming.length%></div><div class="stat-label">Upcoming (7 days)</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-icon" style="background:#fce4ec;"><i class="bi bi-calendar-x" style="color:#c62828;"></i></div><div><div class="stat-value" style="color:#c62828;"><%=missed.length%></div><div class="stat-label">Missed Follow-Ups</div></div></div></div>
+      </div>
+      <ul class="nav nav-tabs mb-3"><li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#upcomingTab">Upcoming (<%=upcoming.length%>)</a></li><li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#missedTab">Missed (<%=missed.length%>)</a></li></ul>
+      <div class="tab-content">
+        <% ['upcoming','missed'].forEach((type,ti)=>{ const list = type==='upcoming'?upcoming:missed; %>
+        <div class="tab-pane fade <%=ti===0?'show active':''%>" id="<%=type%>Tab">
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>Patient</th><th>Disease</th><th>Doctor</th><th>Follow-up Date</th></tr></thead>
+                <tbody>
+                  <% list.forEach(f=>{ %>
+                  <tr>
+                    <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=f.patient_name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=f.patient_name%></div><small class="text-muted monospace"><%=f.patient_code%></small></div></div></td>
+                    <td><small><%=f.disease_name%></small></td>
+                    <td><small><%=f.doctor_name%></small></td>
+                    <td><span class="badge <%=type==='missed'?'bg-danger':'bg-primary'%>"><%=f.followup_date%></span></td>
+                  </tr>
+                  <% }) %>
+                  <% if (!list.length) { %><tr><td colspan="4" class="text-center py-5 text-muted">No <%=type%> follow-ups</td></tr><% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/scripts') %>

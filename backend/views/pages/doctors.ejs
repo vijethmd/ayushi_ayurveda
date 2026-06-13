@@ -1,0 +1,105 @@
+<%- include('../partials/head', { title: 'Doctor Management' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'doctors' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Doctor Management' }) %>
+    <div class="page-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 text-green">Doctor Management</h5>
+        <button class="btn btn-primary btn-sm" onclick="openAddDoctor()"><i class="bi bi-plus me-1"></i>Add Doctor</button>
+      </div>
+      <div class="row g-3">
+        <% doctors.forEach(d=>{ %>
+        <div class="col-md-6 col-xl-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex gap-3 mb-3">
+                <div class="pat-avatar" style="width:48px;height:48px;font-size:18px;font-weight:700;background:#e8f5e9;color:#4a7c59;"><%=d.name.charAt(0)%></div>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="fw-semibold text-truncate"><%=d.name%></div>
+                  <small class="text-muted"><%=d.qualification||''%></small>
+                  <div><span class="badge bg-light text-primary border mt-1" style="font-size:10px;"><%=d.specialization||'General'%></span></div>
+                </div>
+                <span class="badge <%=d.is_active?'bg-success':'bg-secondary'%>" style="height:fit-content;"><%=d.is_active?'Active':'Inactive'%></span>
+              </div>
+              <div class="row g-1 mb-3">
+                <% [['Patients',d.total_patients||0],['Cured',d.cured_patients||0],['Cure%',(d.cure_rate||0)+'%'],['Exp',d.experience_years+'y']].forEach(([l,v])=>{ %>
+                <div class="col-3 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:4px 0;"><div style="font-size:13px;font-weight:700;color:#2d5c3e;"><%=v%></div><div style="font-size:10px;color:#888;"><%=l%></div></div></div>
+                <% }) %>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary flex-grow-1" onclick="editDoctor(<%= JSON.stringify(d) %>)"><i class="bi bi-pencil me-1"></i>Edit</button>
+                <button class="btn btn-sm <%=d.is_active?'btn-outline-danger':'btn-outline-success'%>" onclick="toggleDoctor(<%=d.user_id%>,<%=d.is_active%>)">
+                  <i class="bi <%=d.is_active?'bi-slash-circle':'bi-check-circle'%>"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Add Doctor Modal -->
+<div class="modal fade" id="addDoctorModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="doctorModalTitle">Add Doctor</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <form id="doctorForm"><input type="hidden" id="doctorId"/>
+      <div class="modal-body row g-2">
+        <div class="col-12"><label class="form-label">Full Name *</label><input type="text" name="name" id="dName" class="form-control" required/></div>
+        <div class="col-12"><label class="form-label">Email *</label><input type="email" name="email" id="dEmail" class="form-control" required/></div>
+        <div class="col-12"><label class="form-label">Phone</label><input type="tel" name="phone" id="dPhone" class="form-control"/></div>
+        <div class="col-6"><label class="form-label">Qualification</label><input type="text" name="qualification" id="dQual" class="form-control" placeholder="BAMS, MD"/></div>
+        <div class="col-6"><label class="form-label">Specialization</label><input type="text" name="specialization" id="dSpec" class="form-control"/></div>
+        <div class="col-6"><label class="form-label">Experience (years)</label><input type="number" name="experience_years" id="dExp" class="form-control" value="0"/></div>
+        <div class="col-6" id="pwField"><label class="form-label">Password</label><input type="text" name="password" class="form-control" value="Ayushi@123"/></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary btn-sm" id="doctorSubmitBtn">Add Doctor</button></div>
+    </form>
+  </div></div>
+</div>
+<script>
+let editingDoctorId = null;
+function openAddDoctor() {
+  editingDoctorId = null;
+  document.getElementById('doctorModalTitle').textContent = 'Add Doctor';
+  document.getElementById('doctorSubmitBtn').textContent = 'Add Doctor';
+  document.getElementById('doctorForm').reset();
+  document.getElementById('pwField').style.display = '';
+  openModal('addDoctorModal');
+}
+function editDoctor(d) {
+  editingDoctorId = d.user_id;
+  document.getElementById('doctorModalTitle').textContent = 'Edit Doctor';
+  document.getElementById('doctorSubmitBtn').textContent = 'Update Doctor';
+  document.getElementById('dName').value = d.name;
+  document.getElementById('dEmail').value = d.email;
+  document.getElementById('dPhone').value = d.phone||'';
+  document.getElementById('dQual').value = d.qualification||'';
+  document.getElementById('dSpec').value = d.specialization||'';
+  document.getElementById('dExp').value = d.experience_years||0;
+  document.getElementById('pwField').style.display = 'none';
+  openModal('addDoctorModal');
+}
+document.getElementById('doctorForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(this));
+  try {
+    if (editingDoctorId) {
+      await API.put('/api/doctors/'+editingDoctorId, data);
+      showToast('Doctor updated');
+    } else {
+      await API.post('/api/doctors', data);
+      showToast('Doctor added');
+    }
+    closeModal('addDoctorModal'); location.reload();
+  } catch(err) { showToast(err.message,'error'); }
+});
+async function toggleDoctor(id, isActive) {
+  if (!confirm(isActive?'Disable this doctor?':'Enable this doctor?')) return;
+  await API.patch('/api/doctors/'+id+'/toggle-status');
+  location.reload();
+}
+</script>
+<%- include('../partials/scripts') %>

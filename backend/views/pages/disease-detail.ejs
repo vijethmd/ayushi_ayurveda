@@ -1,0 +1,185 @@
+<%- include('../partials/head', { title: disease.disease_name }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'disease-intelligence' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: disease.disease_name }) %>
+    <div class="page-body">
+      <%
+        const parseCare = (value) => {
+          if (!value) return [];
+          try {
+            const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            return [];
+          }
+        };
+        const careText = (value) => parseCare(value).map(item => {
+          if (typeof item === 'string') return item;
+          if (item.name) return [item.name, item.dosage, item.frequency].filter(Boolean).join(' ');
+          return item.recommendation || item.advice || item.notes || '';
+        }).filter(Boolean).join('; ');
+      %>
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/disease-intelligence" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+        <div class="flex-grow-1">
+          <span class="badge bg-light text-primary border mb-1"><%=disease.category_name%></span>
+          <h5 class="mb-0 text-green"><%=disease.disease_name%></h5>
+          <small class="text-muted"><%=disease.description||''%></small>
+        </div>
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,#c9a84c,#a07a28);color:#fff;" onclick="genDiseaseAI()">
+          <i class="bi bi-robot me-1"></i>Generate AI Drug & Lifestyle Intelligence
+        </button>
+      </div>
+      <div class="row g-2 mb-3">
+        <% const avgDaysCure = (evidence && evidence.overview.avg_days_to_cure != null) ? evidence.overview.avg_days_to_cure + 'd' : '—'; %>
+        <% [['Total',stats.total,'#4a7c59'],['Active',stats.active,'#2980b9'],['Cured',stats.cured,'#27ae60'],['Left',stats.left_treatment,'#e74c3c'],['Cure Rate',(stats.cure_rate||0)+'%','#c9a84c'],['Avg Days/Cure',avgDaysCure,'#8e44ad']].forEach(([l,v,c])=>{ %>
+        <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fw-bold" style="font-size:20px;color:<%=c%>;font-family:'Playfair Display',serif;"><%=v||0%></div><div class="text-muted" style="font-size:11px;"><%=l%></div></div></div></div>
+        <% }) %>
+      </div>
+      <div id="aiReportBox" class="card mb-3 d-none" style="border:2px solid #c9a84c;background:#fdfbf7;">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-robot text-warning"></i><span class="fw-semibold">AI Disease Intelligence Report</span></div>
+          <div class="alert alert-warning py-1 mb-2" style="font-size:12px;">AI-generated insights for research purposes only. Not medical advice.</div>
+          <div id="aiReportContent" class="ai-report-body"></div>
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4"><div class="card h-100"><div class="card-header fw-semibold">Status Distribution</div><div class="card-body d-flex align-items-center justify-content-center" style="height:220px;"><canvas id="statusPie"></canvas></div></div></div>
+        <div class="col-md-8"><div class="card h-100"><div class="card-header fw-semibold">Monthly Registrations</div><div class="card-body" style="height:220px;"><canvas id="monthlyBar"></canvas></div></div></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+          <span>Drug Efficacy — ranked by cohort lift</span>
+          <% if (evidence) { %><span class="badge bg-light text-muted border">Evidence: <%= evidence.overview.confidence %> (n=<%= evidence.overview.total_treatments %>)</span><% } %>
+        </div>
+        <div class="px-3 pt-2"><small class="text-muted">Cohort lift = cure rate <strong>with</strong> the drug minus <strong>without</strong> it (same disease). Positive = the drug cohort did better. Treat small-n rows as weak signals.</small></div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Drug</th><th>n</th><th>Cured</th><th>Cure% with</th><th>Cure% without</th><th>Lift</th><th>Avg days→cure</th><th>Confidence</th></tr></thead>
+            <tbody>
+              <% const drugRows = (evidence && evidence.drugs) ? evidence.drugs : []; %>
+              <% if (!drugRows.length) { %>
+              <tr><td colspan="8" class="text-center py-4 text-muted">No drug data recorded for this disease yet.</td></tr>
+              <% } %>
+              <% drugRows.forEach(drug=>{
+                   const lift = drug.cohort_lift;
+                   const liftColor = lift==null?'#95a5a6':(lift>0?'#27ae60':(lift<0?'#e74c3c':'#95a5a6'));
+                   const confColor = {High:'#27ae60',Moderate:'#f39c12',Low:'#e67e22',Insufficient:'#95a5a6'}[drug.confidence]||'#95a5a6';
+              %>
+              <tr>
+                <td><div class="fw-medium" style="font-size:13px;"><%=drug.drug_name%></div><small class="text-muted"><%=drug.category||'—'%></small></td>
+                <td><small><%=drug.n_treatments%></small></td>
+                <td><small style="color:#27ae60;font-weight:600;"><%=drug.cured_with%></small></td>
+                <td><small><%=drug.cure_rate_with%>%</small></td>
+                <td><small><%=drug.cure_rate_without==null?'—':drug.cure_rate_without+'%'%></small></td>
+                <td><span style="font-size:12px;font-weight:700;color:<%=liftColor%>;"><%=lift==null?'—':(lift>0?'+'+lift:lift)+'%'%></span></td>
+                <td><small><%=drug.avg_days_to_cure==null?'—':drug.avg_days_to_cure+'d'%></small></td>
+                <td><span class="badge" style="background:<%=confColor%>1a;color:<%=confColor%>;border:1px solid <%=confColor%>55;font-size:10px;"><%=drug.confidence%></span></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <% if (evidence && evidence.regimens && evidence.regimens.length) { %>
+      <div class="card mb-3">
+        <div class="card-header fw-semibold">Top Regimens (drug combinations)</div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Regimen</th><th>Drugs</th><th>n</th><th>Cure%</th><th>Avg days→cure</th><th>Confidence</th></tr></thead>
+            <tbody>
+              <% evidence.regimens.forEach(r=>{ const confColor={High:'#27ae60',Moderate:'#f39c12',Low:'#e67e22',Insufficient:'#95a5a6'}[r.confidence]||'#95a5a6'; %>
+              <tr>
+                <td><small class="fw-medium"><%=r.regimen%></small></td>
+                <td><small><%=r.drug_count%></small></td>
+                <td><small><%=r.n_treatments%></small></td>
+                <td><small style="color:#27ae60;font-weight:600;"><%=r.cure_rate%>%</small></td>
+                <td><small><%=r.avg_days_to_cure==null?'—':r.avg_days_to_cure+'d'%></small></td>
+                <td><span class="badge" style="background:<%=confColor%>1a;color:<%=confColor%>;border:1px solid <%=confColor%>55;font-size:10px;"><%=r.confidence%></span></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <% } %>
+
+      <% if (evidence && evidence.response_samples && evidence.response_samples.length) { %>
+      <div class="card mb-3">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-chat-left-quote me-1 text-warning"></i>Recorded Response Notes</span>
+          <span class="badge bg-light text-muted border"><%= evidence.response_samples.length %> notes</span>
+        </div>
+        <div class="px-3 pt-2"><small class="text-muted">Each patient's recorded response to a medicine, tagged with patient code &amp; final outcome — fed to the AI to weigh drug efficacy. Click a code to open the patient.</small></div>
+        <div class="table-responsive" style="max-height:340px;">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead><tr><th style="width:110px;">Patient</th><th style="width:120px;">Outcome</th><th>Response Note</th></tr></thead>
+            <tbody>
+              <% const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
+              <% evidence.response_samples.forEach(r=>{ %>
+              <tr>
+                <td><a href="/patients/<%=r.patient_id%>" class="monospace text-decoration-none" style="font-size:12px;"><%= r.patient_code %></a></td>
+                <td><span class="status-badge <%= sc[r.status]||'' %>"><%= r.status %></span></td>
+                <td style="font-size:12.5px;line-height:1.5;"><%= r.note %></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <% } %>
+
+      <div class="card">
+        <div class="card-header fw-semibold">Patients with <%=disease.disease_name%> · Treatments, Drugs & Lifestyle</div>
+        <div class="table-responsive" style="max-height:350px;">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Patient</th><th>Doctor</th><th>Status</th><th>Duration</th><th>Drugs / Medicines</th><th>Lifestyle / Diet</th><th>Start</th></tr></thead>
+            <tbody>
+              <% patients.forEach(p=>{ const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'};
+                   const endRef = p.end_date ? new Date(p.end_date) : new Date();
+                   const durDays = p.start_date ? Math.max(0, Math.round((endRef - new Date(p.start_date))/86400000)) : null; %>
+              <tr class="cursor-pointer" onclick="location.href='/patients/<%=p.patient_id%>'">
+                <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=p.patient_name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=p.patient_name%></div><small class="monospace text-muted"><%=p.patient_code%></small></div></div></td>
+                <td><small><%=p.doctor_name%></small></td>
+                <td><span class="status-badge <%=sc[p.status]||''%>"><%=p.status%></span></td>
+                <td><small class="text-muted"><%=durDays==null?'—':durDays+'d'%><%=p.end_date?'':' (ongoing)'%></small></td>
+                <td style="min-width:220px;">
+                  <small><%=p.drugs_summary || careText(p.medicines_json) || '—'%></small>
+                  <% if (p.avg_drug_efficacy) { %><div><span class="badge bg-light text-success border" style="font-size:10px;">Drug efficacy <%=p.avg_drug_efficacy%>%</span></div><% } %>
+                  <% if (p.side_effects) { %><div><small class="text-danger">Side effects: <%=p.side_effects%></small></div><% } %>
+                </td>
+                <td style="min-width:220px;"><small><%=careText(p.lifestyle_json) || 'Lifestyle not recorded'%></small><br/><small class="text-muted"><%=careText(p.diet_json) || 'Diet not recorded'%></small></td>
+                <td><small><%=p.start_date%></small></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const pie=[{s:'Active',v:<%=stats.active||0%>},{s:'Cured',v:<%=stats.cured||0%>},{s:'Improved',v:<%=stats.improved||0%>},{s:'Left',v:<%=stats.left_treatment||0%>}].filter(x=>x.v>0);
+if(pie.length) new Chart(document.getElementById('statusPie'),{type:'doughnut',data:{labels:pie.map(x=>x.s),datasets:[{data:pie.map(x=>x.v),backgroundColor:['#4a7c59','#27ae60','#c9a84c','#e74c3c'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+const trend=<%- JSON.stringify([...monthlyTrend].reverse()) %>;
+new Chart(document.getElementById('monthlyBar'),{type:'bar',data:{labels:trend.map(m=>m.month),datasets:[{label:'Registrations',data:trend.map(m=>m.registrations),backgroundColor:'#4a7c59',borderRadius:4},{label:'Cured',data:trend.map(m=>m.cured),backgroundColor:'#c9a84c',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false}});
+async function genDiseaseAI(refresh) {
+  const box=document.getElementById('aiReportBox'); const content=document.getElementById('aiReportContent');
+  box.classList.remove('d-none');
+  content.innerHTML='<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-warning"></span> '+(refresh?'Regenerating with AI…':'Loading drug, lifestyle and efficacy intelligence…')+'</div>';
+  try {
+    const url='/api/ai/disease-intelligence/<%=disease.disease_id%>'+(refresh?'?refresh=1':'');
+    const r=await API.post(url);
+    const md=typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text;
+    let bar='<div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">';
+    bar+='<small class="text-muted">'+(r.cached?('<i class="bi bi-clock-history me-1"></i>Saved report'+(r.generated_at?' · '+new Date(r.generated_at).toLocaleString():'')):'<i class="bi bi-stars me-1"></i>Freshly generated')+'</small>';
+    bar+='<button class="btn btn-xs btn-outline-secondary" style="font-size:11px;padding:2px 8px;" onclick="genDiseaseAI(true)"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button></div>';
+    content.innerHTML=bar+md; content.classList.add('ai-report-body');
+  }
+  catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'</div>'; }
+}
+</script>
+<%- include('../partials/scripts') %>

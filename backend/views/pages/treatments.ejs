@@ -1,0 +1,50 @@
+<%- include('../partials/head', { title: 'Treatments' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'treatments' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'Treatments' }) %>
+    <div class="page-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h5 class="mb-0 text-green">Treatment Management</h5><small class="text-muted"><%=total%> treatments</small></div>
+        <form method="GET" class="d-flex gap-2">
+          <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <% ['Ongoing','Improved','Cured','Left Treatment'].forEach(s=>{ %><option value="<%=s%>" <%=filters.status===s?'selected':''%>><%=s%></option><% }) %>
+          </select>
+          <a href="/treatments" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </form>
+      </div>
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Patient</th><th>Disease</th><th>Doctor</th><th>Status</th><th>Start</th><th>End</th><th></th></tr></thead>
+            <tbody>
+              <% treatments.forEach(t=>{ const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
+              <tr>
+                <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=t.patient_name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=t.patient_name%></div><small class="monospace text-muted"><%=t.patient_code%></small></div></div></td>
+                <td><small><%=t.disease_name%></small></td>
+                <td><small><%=t.doctor_name%></small></td>
+                <td><span class="status-badge <%=sc[t.status]||''%>"><%=t.status%></span></td>
+                <td><small><%=t.start_date%></small></td>
+                <td><small><%=t.end_date||'Ongoing'%></small></td>
+                <td><a href="/patients/<%=t.patient_id%>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+              </tr>
+              <% }) %>
+              <% if (!treatments.length) { %><tr><td colspan="7" class="text-center py-5 text-muted">No treatments found</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+        <% if (totalPages > 1) { %>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+          <small class="text-muted">Page <%=currentPage%> of <%=totalPages%></small>
+          <nav><ul class="pagination pagination-sm mb-0">
+            <% if (currentPage>1) { %><li class="page-item"><a class="page-link" href="?page=<%=currentPage-1%>&status=<%=filters.status||''%>">Prev</a></li><% } %>
+            <% if (currentPage<totalPages) { %><li class="page-item"><a class="page-link" href="?page=<%=currentPage+1%>&status=<%=filters.status||''%>">Next</a></li><% } %>
+          </ul></nav>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/scripts') %>

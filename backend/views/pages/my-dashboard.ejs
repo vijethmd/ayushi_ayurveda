@@ -1,0 +1,90 @@
+<%- include('../partials/head', { title: 'My Dashboard' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'my-dashboard' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'My Dashboard' }) %>
+    <div class="page-body">
+      <div class="mb-3">
+        <h5 class="text-green mb-0">Welcome, <%= user.name %></h5>
+        <small class="text-muted">Your personal patient overview</small>
+      </div>
+      <div class="row g-3 mb-4">
+        <% const sc=[
+          {l:'My Patients',v:data.stats.my_patients,c:'#4a7c59',bg:'#e8f5e9',i:'bi-people'},
+          {l:'Active',v:data.stats.active,c:'#2980b9',bg:'#e3f2fd',i:'bi-heart-pulse'},
+          {l:'Cured',v:data.stats.cured,c:'#27ae60',bg:'#e8f5e9',i:'bi-check-circle'},
+          {l:'Cure Rate',v:(data.stats.cure_rate||0)+'%',c:'#c9a84c',bg:'#fff8e1',i:'bi-graph-up'},
+        ]; sc.forEach(s=>{ %>
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:<%=s.bg%>;"><i class="bi <%=s.i%>" style="color:<%=s.c%>;"></i></div>
+            <div><div class="stat-value" style="color:<%=s.c%>;"><%=s.v||0%></div><div class="stat-label"><%=s.l%></div></div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-5">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">My Patient Status</div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height:220px;">
+              <canvas id="myPie"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="card h-100">
+            <div class="card-header fw-semibold">My Top Diseases</div>
+            <div class="card-body" style="height:220px;"><canvas id="myDiseases"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-7">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span class="fw-semibold">Recent Patients</span>
+              <a href="/patients?my_patients=true" class="btn btn-sm btn-outline-primary" style="font-size:11px;">View All</a>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>Patient</th><th>Disease</th><th>Status</th></tr></thead>
+                <tbody>
+                  <% (data.recentPatients||[]).forEach(p=>{ const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
+                  <tr class="cursor-pointer" onclick="location.href='/patients/<%=p.patient_id%>'">
+                    <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=p.name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=p.name%></div><small class="text-muted"><%=p.age%>y <%=p.gender.charAt(0)%></small></div></div></td>
+                    <td><small><%=p.disease_name%></small></td>
+                    <td><span class="status-badge <%=sc[p.status]||''%>"><%=p.status%></span></td>
+                  </tr>
+                  <% }) %>
+                  <% if (!data.recentPatients?.length) { %><tr><td colspan="3" class="text-center py-3 text-muted">No patients yet</td></tr><% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="card">
+            <div class="card-header fw-semibold">Upcoming Follow-Ups (7 days)</div>
+            <div class="card-body p-0" style="max-height:260px;overflow-y:auto;">
+              <% (data.upcomingFollowups||[]).forEach(f=>{ %>
+              <div class="d-flex gap-2 px-3 py-2 border-bottom align-items-start">
+                <div class="pat-avatar" style="background:#e3f2fd;color:#1565c0;"><i class="bi bi-calendar-check" style="font-size:14px;"></i></div>
+                <div><div style="font-size:13px;font-weight:500;"><%=f.patient_name%></div><div class="text-muted" style="font-size:11px;"><%=f.disease_name%> &middot; <%=f.followup_date%></div></div>
+              </div>
+              <% }) %>
+              <% if (!data.upcomingFollowups?.length) { %><p class="text-muted text-center py-4 mb-0 small">No follow-ups this week 🎉</p><% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const pie=[{s:'Active',v:<%=data.stats.active||0%>},{s:'Cured',v:<%=data.stats.cured||0%>},{s:'Dropout',v:<%=data.stats.dropout||0%>}].filter(x=>x.v>0);
+if(pie.length) new Chart(document.getElementById('myPie'),{type:'doughnut',data:{labels:pie.map(x=>x.s),datasets:[{data:pie.map(x=>x.v),backgroundColor:['#4a7c59','#27ae60','#e74c3c'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+const dis=<%- JSON.stringify(data.myDiseases||[]) %>;
+if(dis.length) new Chart(document.getElementById('myDiseases'),{type:'bar',data:{labels:dis.map(d=>d.disease_name),datasets:[{label:'Patients',data:dis.map(d=>d.count),backgroundColor:'#4a7c59',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+</script>
+<%- include('../partials/scripts') %>

@@ -1,0 +1,441 @@
+<%- include('../partials/head', { title: patient.name }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'patients' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: patient.name }) %>
+    <div class="page-body">
+      <%
+        // Parse the medicines / lifestyle / diet JSON stored on each treatment
+        const parseCare = (value) => {
+          if (!value) return [];
+          try {
+            const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (e) { return []; }
+        };
+        const careList = (value) => parseCare(value).map(item => {
+          if (typeof item === 'string') return item;
+          if (item.name) return [item.name, item.dosage, item.frequency].filter(Boolean).join(' · ');
+          return item.recommendation || item.advice || item.notes || '';
+        }).filter(Boolean);
+      %>
+
+      <!-- Back + Header -->
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/patients" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+        <div class="pat-avatar" style="width:48px;height:48px;font-size:18px;"><%=patient.name.charAt(0)%></div>
+        <div class="flex-grow-1">
+          <h5 class="mb-0 text-green"><%=patient.name%></h5>
+          <small class="text-muted"><%=patient.patient_code%> &middot; <%=patient.age%> yrs &middot; <%=patient.gender%> &middot; <%=patient.occupation||'—'%></small>
+        </div>
+        <a href="/timeline/<%=patient.patient_id%>" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-clock-history me-1"></i>Timeline
+        </a>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addTreatmentModal">
+          <i class="bi bi-plus me-1"></i>New Treatment
+        </button>
+      </div>
+
+      <!-- Quick Info -->
+      <div class="row g-2 mb-3">
+        <% [['Phone',patient.phone||'—'],['Registration',patient.registration_date],
+           ['Treatments',treatments.length],['Drugs Prescribed',drugAdministrations.length]].forEach(([l,v]) => { %>
+        <div class="col-6 col-md-3">
+          <div class="card"><div class="card-body py-2 px-3">
+            <div class="text-muted" style="font-size:11px;"><%=l%></div>
+            <div class="fw-semibold" style="font-size:14px;"><%=v%></div>
+          </div></div>
+        </div>
+        <% }) %>
+      </div>
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs mb-3" id="patTab">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#treatTab">Treatments (<%=treatments.length%>)</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#drugTab">Drugs (<%=drugAdministrations.length%>)</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#timelineTab">Timeline (<%=timeline.length%>)</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#aiTab">AI Reports (<%=aiReports.length%>)</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#infoTab">Info</a></li>
+      </ul>
+
+      <div class="tab-content">
+
+        <!-- Treatments -->
+        <div class="tab-pane fade show active" id="treatTab">
+          <div class="d-flex justify-content-end mb-2 gap-2">
+            <button class="btn btn-sm btn-outline-warning" onclick="genDropoutRisk()"><i class="bi bi-robot me-1"></i>Dropout Risk</button>
+            <button class="btn btn-sm btn-outline-info" onclick="genPatientSummary()"><i class="bi bi-robot me-1"></i>AI Summary</button>
+          </div>
+          <div id="aiResultBox" class="card mb-3 d-none" style="border:2px solid #c9a84c;background:#fdfbf7;">
+            <div class="card-body"><div id="aiResultContent"></div></div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead><tr><th>Disease</th><th>Doctor</th><th>Status</th><th>Period</th><th>Actions</th></tr></thead>
+              <tbody>
+                <% if (!treatments.length) { %>
+                <tr><td colspan="5" class="text-center py-4 text-muted">No treatments. Click "New Treatment" to add one.</td></tr>
+                <% } %>
+                <% treatments.forEach(t => {
+                     const meds = careList(t.medicines_json);
+                     const life = careList(t.lifestyle_json);
+                     const diet = careList(t.diet_json);
+                %>
+                <tr>
+                  <td><div class="fw-medium" style="font-size:13px;"><%=t.disease_name%></div><small class="text-muted"><%=t.category_name%></small></td>
+                  <td><small><%=t.doctor_name%></small></td>
+                  <td>
+                    <% const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
+                    <span class="status-badge <%=sc[t.status]||''%>"><%=t.status%></span>
+                  </td>
+                  <td><small><%=t.start_date%> → <%=t.end_date||'Ongoing'%></small></td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-success me-1" onclick="openAddFollowup(<%=t.treatment_id%>,'<%=t.disease_name%>')" title="Add Follow-up"><i class="bi bi-calendar-plus"></i></button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openEditTreatment(<%= JSON.stringify(t) %>)" title="Edit"><i class="bi bi-pencil"></i></button>
+                  </td>
+                </tr>
+                <!-- Medicines & suggestions given to the patient for this treatment -->
+                <tr class="treatment-care-row">
+                  <td colspan="5" style="background:#fbfaf6;border-top:0;">
+                    <div class="row g-3 px-1 py-1">
+                      <div class="col-md-4">
+                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-capsule me-1 text-green"></i>Medicines</div>
+                        <% if (meds.length) { %>
+                          <% meds.forEach(m => { %><span class="badge bg-light text-dark border me-1 mb-1" style="font-weight:500;"><%=m%></span><% }) %>
+                        <% } else { %><small class="text-muted fst-italic">None recorded</small><% } %>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-person-walking me-1 text-green"></i>Lifestyle</div>
+                        <% if (life.length) { %>
+                          <ul class="mb-0 ps-3" style="font-size:12px;"><% life.forEach(l => { %><li><%=l%></li><% }) %></ul>
+                        <% } else { %><small class="text-muted fst-italic">None recorded</small><% } %>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-egg-fried me-1 text-green"></i>Diet</div>
+                        <% if (diet.length) { %>
+                          <ul class="mb-0 ps-3" style="font-size:12px;"><% diet.forEach(d => { %><li><%=d%></li><% }) %></ul>
+                        <% } else { %><small class="text-muted fst-italic">None recorded</small><% } %>
+                      </div>
+                      <% if (t.current_notes) { %>
+                      <div class="col-12">
+                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-journal-text me-1 text-green"></i>Notes</div>
+                        <small><%=t.current_notes%></small>
+                      </div>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Drugs -->
+        <div class="tab-pane fade" id="drugTab">
+          <div class="alert alert-light border py-2 mb-2" style="font-size:12px;">
+            <i class="bi bi-info-circle me-1 text-green"></i>Medicines are recorded as part of each treatment plan. Add or edit them via the <strong>Treatments</strong> tab.
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead><tr><th>Drug</th><th>Category</th><th>Dosage</th><th>Frequency</th><th>For Disease</th><th>Treatment Status</th></tr></thead>
+              <tbody>
+                <% if (!drugAdministrations.length) { %>
+                <tr><td colspan="6" class="text-center py-4 text-muted">No medicines recorded yet. Add a treatment with medicines from the Treatments tab.</td></tr>
+                <% } %>
+                <% drugAdministrations.forEach(d => { const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
+                <tr>
+                  <td><div class="fw-medium" style="font-size:13px;"><%=d.drug_name%></div></td>
+                  <td><small class="text-muted"><%=d.category||'—'%></small></td>
+                  <td><small><%=d.dosage||'—'%></small></td>
+                  <td><small><%=d.frequency||'—'%></small></td>
+                  <td><small><%=d.disease_name%></small></td>
+                  <td><span class="status-badge <%=sc[d.treatment_status]||''%>"><%=d.treatment_status%></span></td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="tab-pane fade" id="timelineTab">
+          <div class="timeline mt-3">
+            <% if (!timeline.length) { %><p class="text-muted">No timeline events.</p><% } %>
+            <% timeline.forEach((e,i) => {
+              const icons = {registration:'👤',treatment_started:'💊',followup:'📋',treatment_completed:'✅',left_treatment:'⚠️',status_changed:'📊',ai_report:'🤖',medicine_updated:'🌿'};
+            %>
+            <div class="timeline-item">
+              <div class="timeline-dot"><%=icons[e.event_type]||'•'%></div>
+              <div class="timeline-card">
+                <div class="d-flex justify-content-between align-items-start">
+                  <span class="fw-semibold" style="font-size:13px;"><%=e.event_title%></span>
+                  <small class="text-muted ms-2 text-nowrap"><%=new Date(e.event_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})%></small>
+                </div>
+                <% if (e.event_description) { %><p class="text-muted mb-0 mt-1" style="font-size:12px;"><%=e.event_description%></p><% } %>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+          <a href="/timeline/<%=patient.patient_id%>" class="btn btn-outline-primary btn-sm mt-2">View Full Timeline</a>
+        </div>
+
+        <!-- AI Reports -->
+        <div class="tab-pane fade" id="aiTab">
+          <% if (!aiReports.length) { %>
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-robot" style="font-size:48px;opacity:0.3;"></i>
+            <p class="mt-2">No AI reports yet. Use buttons above to generate.</p>
+          </div>
+          <% } %>
+          <% aiReports.forEach(r => { %>
+          <div class="card mb-2" style="border:1px solid #e8d9c0;background:#fdfbf7;">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-robot text-warning"></i>
+                <span class="fw-semibold" style="font-size:13px;"><%=r.report_title%></span>
+                <span class="badge bg-warning text-dark ms-auto"><%=r.report_type%></span>
+              </div>
+              <small class="text-muted"><%=new Date(r.generated_at).toLocaleString('en-IN')%></small>
+              <div class="mt-2" id="report_<%=r.report_id%>"></div>
+              <script>renderMarkdown(<%- JSON.stringify(r.report_text) %>,'report_<%=r.report_id%>')</script>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+
+        <!-- Info -->
+        <div class="tab-pane fade" id="infoTab">
+          <div class="row g-3 mt-1">
+            <% [['Full Name',patient.name],['Patient Code',patient.patient_code],['Age',patient.age+' years'],
+               ['Gender',patient.gender],['Phone',patient.phone||'—'],['Occupation',patient.occupation||'—'],
+               ['Registration',patient.registration_date],['Address',patient.address||'—']].forEach(([l,v]) => { %>
+            <div class="col-md-6">
+              <div class="text-muted small"><%=l%></div>
+              <div class="fw-medium" style="font-size:14px;"><%=v%></div>
+              <hr class="my-2"/>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+
+      </div><!-- tab-content -->
+    </div>
+  </div>
+</div>
+
+<!-- Add Treatment Modal -->
+<div class="modal fade" id="addTreatmentModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">New Treatment</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="addTreatmentForm">
+        <input type="hidden" name="patient_id" value="<%=patient.patient_id%>"/>
+        <div class="modal-body">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Disease *</label>
+              <select name="disease_id" class="form-select" required>
+                <option value="">Select Disease…</option>
+                <% diseases.forEach(d => { %><option value="<%=d.disease_id%>"><%=d.disease_name%> (<%=d.category_name%>)</option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Doctor</label>
+              <select name="doctor_id" class="form-select">
+                <% doctors.forEach(d => { %><option value="<%=d.user_id%>" <%=d.user_id==user.userId?'selected':''%>><%=d.name%></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-6"><label class="form-label">Start Date</label><input type="date" name="start_date" class="form-control" value="<%=new Date().toISOString().split('T')[0]%>"/></div>
+
+            <!-- Medicines prescribed at start -->
+            <div class="col-12">
+              <label class="form-label mb-1">Medicines Prescribed *</label>
+              <div id="medRows">
+                <div class="row g-1 mb-1 med-row">
+                  <div class="col-5"><select class="form-select form-select-sm med-name"><option value="">Select medicine…</option><% drugs.forEach(d => { %><option value="<%=d.name%>"><%=d.name%></option><% }) %></select></div>
+                  <div class="col-3"><input class="form-control form-control-sm med-dosage" placeholder="Dosage (e.g. 500mg)"/></div>
+                  <div class="col-3"><input class="form-control form-control-sm med-freq" placeholder="Frequency"/></div>
+                  <div class="col-1 d-flex align-items-center"><button type="button" class="btn btn-sm btn-outline-danger med-remove" tabindex="-1">&times;</button></div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="addMedRow"><i class="bi bi-plus"></i> Add medicine</button>
+            </div>
+
+            <div class="col-md-6"><label class="form-label">Lifestyle Advice <small class="text-muted">(one per line)</small></label><textarea id="tLifestyle" class="form-control" rows="2" placeholder="e.g. Daily yoga&#10;Avoid heavy lifting"></textarea></div>
+            <div class="col-md-6"><label class="form-label">Diet Advice <small class="text-muted">(one per line)</small></label><textarea id="tDiet" class="form-control" rows="2" placeholder="e.g. Warm water&#10;Avoid fried food"></textarea></div>
+            <div class="col-12"><label class="form-label">Notes</label><textarea name="current_notes" class="form-control" rows="2"></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Create Treatment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Follow-up Modal -->
+<div class="modal fade" id="addFollowupModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="followupModalTitle">Add Follow-Up</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="addFollowupForm">
+        <input type="hidden" name="treatment_id" id="followupTreatmentId"/>
+        <div class="modal-body row g-2">
+          <div class="col-12"><label class="form-label">Follow-up Date</label><input type="date" name="followup_date" class="form-control" value="<%=new Date().toISOString().split('T')[0]%>" required/></div>
+          <div class="col-12"><label class="form-label">Symptoms / Response Observed</label><textarea name="symptoms" class="form-control" rows="2" placeholder="e.g. Good response, stiffness reduced; or symptoms unchanged"></textarea></div>
+          <div class="col-12"><label class="form-label">Side Effects</label><input type="text" name="side_effects" class="form-control" placeholder="None"/></div>
+          <div class="col-12"><label class="form-label">Doctor Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Add Follow-Up</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Drug Modal -->
+<div class="modal fade" id="addDrugModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Prescribe Drug</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="addDrugAdminForm">
+        <div class="modal-body row g-2">
+          <div class="col-12">
+            <label class="form-label">Treatment *</label>
+            <select name="treatment_id" class="form-select" required>
+              <% treatments.forEach(t => { %><option value="<%=t.treatment_id%>"><%=t.disease_name%> (<%=t.status%>)</option><% }) %>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Drug *</label>
+            <select name="drug_id" class="form-select" required>
+              <option value="">Select Drug…</option>
+              <% drugs.forEach(d => { %><option value="<%=d.drug_id%>"><%=d.name%> — <%=d.category%></option><% }) %>
+            </select>
+          </div>
+          <div class="col-6"><label class="form-label">Dosage</label><input type="text" name="dosage" class="form-control" placeholder="e.g. 500mg"/></div>
+          <div class="col-6"><label class="form-label">Frequency</label><input type="text" name="frequency" class="form-control" placeholder="twice daily"/></div>
+          <div class="col-6"><label class="form-label">Duration (days)</label><input type="number" name="duration_days" class="form-control"/></div>
+          <div class="col-6"><label class="form-label">Route</label>
+            <select name="route" class="form-select"><option>Oral</option><option>Topical</option><option>Nasal</option><option>Rectal</option></select>
+          </div>
+          <div class="col-12"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Prescribe</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Outcome Modal -->
+<div class="modal fade" id="outcomeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Record Drug Outcome</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="outcomeForm">
+        <input type="hidden" name="admin_id" id="outcomeAdminId"/>
+        <div class="modal-body row g-2">
+          <div class="col-12"><label class="form-label">Assessment Date</label><input type="date" name="assessment_date" class="form-control" value="<%=new Date().toISOString().split('T')[0]%>" required/></div>
+          <div class="col-12"><label class="form-label">Efficacy Score (0–100)</label><input type="range" name="efficacy_score" class="form-range" min="0" max="100" step="5" value="70" oninput="document.getElementById('effVal').textContent=this.value+'%'"/><span id="effVal">70%</span></div>
+          <div class="col-12"><label class="form-label">Side Effects</label><input type="text" name="side_effects" class="form-control" placeholder="None"/></div>
+          <div class="col-12"><label class="form-label">Patient Feedback</label><input type="text" name="patient_feedback" class="form-control"/></div>
+          <div class="col-12"><label class="form-label">Doctor Notes</label><textarea name="doctor_notes" class="form-control" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save Outcome</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const PATIENT_ID = <%=patient.patient_id%>;
+
+// Add another medicine row
+document.getElementById('addMedRow').addEventListener('click', () => {
+  const rows = document.getElementById('medRows');
+  const clone = rows.querySelector('.med-row').cloneNode(true);
+  clone.querySelectorAll('input').forEach(i => i.value = '');
+  clone.querySelector('select').value = '';
+  rows.appendChild(clone);
+});
+// Remove a medicine row (keep at least one)
+document.getElementById('medRows').addEventListener('click', (e) => {
+  if (e.target.closest('.med-remove')) {
+    const rows = document.querySelectorAll('#medRows .med-row');
+    if (rows.length > 1) e.target.closest('.med-row').remove();
+  }
+});
+// Custom submit: build medicines/lifestyle/diet arrays then POST
+document.getElementById('addTreatmentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('[type=submit]');
+  const orig = btn.innerHTML;
+  const data = Object.fromEntries(new FormData(form));
+  // medicines from the repeatable rows
+  data.medicines_json = [...document.querySelectorAll('#medRows .med-row')].map(r => ({
+    name: r.querySelector('.med-name').value.trim(),
+    dosage: r.querySelector('.med-dosage').value.trim(),
+    frequency: r.querySelector('.med-freq').value.trim(),
+  })).filter(m => m.name);
+  if (!data.medicines_json.length) { showToast('Add at least one medicine', 'error'); return; }
+  const lines = (id) => document.getElementById(id).value.split('\n').map(s => s.trim()).filter(Boolean).map(s => ({ recommendation: s }));
+  data.lifestyle_json = lines('tLifestyle');
+  data.diet_json = lines('tDiet');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+  try {
+    const r = await API.post('/api/treatments', data);
+    showToast(r.message || 'Treatment created');
+    closeModal('addTreatmentModal'); location.reload();
+  } catch (err) { showToast(err.message || 'Error', 'error'); btn.disabled = false; btn.innerHTML = orig; }
+});
+ajaxForm('addFollowupForm','/api/followups','POST',()=>{ closeModal('addFollowupModal'); location.reload(); });
+ajaxForm('addDrugAdminForm','/api/drugs/administrations','POST',()=>{ closeModal('addDrugModal'); location.reload(); });
+ajaxForm('outcomeForm','/api/drugs/outcomes','POST',()=>{ closeModal('outcomeModal'); location.reload(); });
+
+function openAddFollowup(tid, disease) {
+  document.getElementById('followupTreatmentId').value = tid;
+  document.getElementById('followupModalTitle').textContent = 'Add Follow-Up — ' + disease;
+  openModal('addFollowupModal');
+}
+function openOutcomeModal(adminId) {
+  document.getElementById('outcomeAdminId').value = adminId;
+  openModal('outcomeModal');
+}
+function openEditTreatment(t) {
+  alert('Edit treatment ID: ' + t.treatment_id + '\nUse API: PUT /api/treatments/' + t.treatment_id);
+}
+async function genPatientSummary() {
+  const box = document.getElementById('aiResultBox');
+  const content = document.getElementById('aiResultContent');
+  box.classList.remove('d-none');
+  content.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-warning"></span> Generating AI summary…</div>';
+  try {
+    const r = await API.post('/api/ai/patient-summary/'+PATIENT_ID);
+    content.innerHTML = '<div class="ai-report-body">' + (typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text) + '</div>';
+  } catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'</div>'; }
+}
+async function genDropoutRisk() {
+  const box = document.getElementById('aiResultBox');
+  const content = document.getElementById('aiResultContent');
+  box.classList.remove('d-none');
+  content.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-warning"></span> Analysing dropout risk…</div>';
+  try {
+    const r = await API.post('/api/ai/dropout-risk/'+PATIENT_ID);
+    const riskColor = r.risk==='High'?'danger':r.risk==='Medium'?'warning':'success';
+    content.innerHTML = `<div class="alert alert-${riskColor} mb-2"><strong>Dropout Risk: ${r.risk}</strong></div><div class="ai-report-body">${typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text}</div>`;
+  } catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'</div>'; }
+}
+</script>
+<%- include('../partials/scripts') %>

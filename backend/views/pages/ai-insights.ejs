@@ -1,0 +1,118 @@
+<%- include('../partials/head', { title: 'AI Insights' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: 'ai-insights' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'AI Insights Centre' }) %>
+    <div class="page-body">
+      <div class="alert alert-warning d-flex align-items-start gap-2 mb-4">
+        <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+        <span style="font-size:13px;">AI-generated insights are for analytical and research purposes only and should not be considered medical advice.</span>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="card h-100" style="border:1px solid #4a7c5940;">
+            <div class="card-body">
+              <div class="d-flex gap-3 mb-3">
+                <div style="padding:12px;background:#e8f5e9;border-radius:10px;"><i class="bi bi-graph-up" style="font-size:28px;color:#4a7c59;"></i></div>
+                <div><div class="fw-semibold">Clinical Insights</div><small class="text-muted">Analyse clinic-wide cure rates, dropout patterns and treatment trends.</small></div>
+              </div>
+              <button class="btn btn-primary btn-sm w-100" onclick="generateReport('clinical-insights')"><i class="bi bi-robot me-1"></i>Generate Clinical Insights</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100" style="border:1px solid #2980b940;">
+            <div class="card-body">
+              <div class="d-flex gap-3 mb-3">
+                <div style="padding:12px;background:#e3f2fd;border-radius:10px;"><i class="bi bi-person-badge" style="font-size:28px;color:#2980b9;"></i></div>
+                <div><div class="fw-semibold">Doctor Performance</div><small class="text-muted">Generate performance insights for a specific doctor.</small></div>
+              </div>
+              <select id="doctorSelect" class="form-select form-select-sm mb-2">
+                <option value="">Select Doctor…</option>
+                <% doctors.forEach(d=>{ %><option value="<%=d.user_id%>"><%=d.name%> — <%=d.specialization||'General'%></option><% }) %>
+              </select>
+              <button class="btn btn-sm w-100" style="background:#2980b9;color:#fff;" onclick="generateDoctorReport()"><i class="bi bi-robot me-1"></i>Generate Doctor Insights</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="aiResultBox" class="card mb-4 d-none" style="border:2px solid #c9a84c;background:#fdfbf7;">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-robot text-warning"></i><span class="fw-semibold" id="aiResultTitle">Report</span>
+            <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="document.getElementById('aiResultBox').classList.add('d-none')">Close</button>
+          </div>
+          <div id="aiResultContent"></div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Previous Reports</h6>
+        <select id="reportTypeFilter" class="form-select form-select-sm" style="width:200px;" onchange="filterReports(this.value)">
+          <option value="">All Types</option>
+          <option value="clinical_insights">Clinical Insights</option>
+          <option value="patient_summary">Patient Summary</option>
+          <option value="dropout_risk">Dropout Risk</option>
+          <option value="doctor_performance">Doctor Performance</option>
+          <option value="disease_intelligence">Disease Intelligence</option>
+          <option value="drug_research">Drug Research</option>
+        </select>
+      </div>
+      <div id="reportsList">
+        <% reports.forEach(r=>{ %>
+        <div class="card mb-2 report-card" data-type="<%=r.report_type%>" style="border:1px solid #e8d9c0;background:#fdfbf7;">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-robot text-warning"></i>
+              <span class="fw-semibold" style="font-size:13px;"><%=r.report_title%></span>
+              <span class="badge bg-warning text-dark ms-auto" style="font-size:10px;"><%=r.report_type.replace(/_/g,' ')%></span>
+              <button class="btn btn-sm btn-outline-secondary" style="font-size:11px;" onclick="toggleReport(this)">View</button>
+            </div>
+            <small class="text-muted"><%=new Date(r.generated_at).toLocaleString('en-IN')%> by <%=r.generated_by_name||'System'%></small>
+            <div class="report-body d-none mt-2 ai-report-body" id="r<%=r.report_id%>"></div>
+            <script>document.getElementById('r<%=r.report_id%>').innerHTML=typeof marked!=='undefined'?marked.parse(<%- JSON.stringify(r.report_text) %>):<%- JSON.stringify(r.report_text) %>;</script>
+          </div>
+        </div>
+        <% }) %>
+        <% if (!reports.length) { %><div class="text-center py-5 text-muted"><i class="bi bi-robot" style="font-size:48px;opacity:0.3;"></i><p class="mt-2">No reports yet</p></div><% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleReport(btn) {
+  const body = btn.closest('.card-body').querySelector('.report-body');
+  body.classList.toggle('d-none');
+  btn.textContent = body.classList.contains('d-none') ? 'View' : 'Hide';
+}
+function filterReports(type) {
+  document.querySelectorAll('.report-card').forEach(c=>{
+    c.style.display = !type || c.dataset.type===type ? '' : 'none';
+  });
+}
+async function generateReport(type) {
+  const box=document.getElementById('aiResultBox'); const content=document.getElementById('aiResultContent');
+  document.getElementById('aiResultTitle').textContent = type==='clinical-insights'?'Clinical Insights Report':'Report';
+  box.classList.remove('d-none');
+  content.innerHTML='<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-warning"></span> Generating…</div>';
+  try {
+    const r = await API.post('/api/ai/'+type);
+    content.innerHTML = typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text;
+    content.classList.add('ai-report-body');
+    showToast('Report generated successfully!');
+  } catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'<br><small>Make sure GEMINI_API_KEY is set in .env</small></div>'; }
+}
+async function generateDoctorReport() {
+  const docId = document.getElementById('doctorSelect').value;
+  if (!docId) { showToast('Please select a doctor','error'); return; }
+  const box=document.getElementById('aiResultBox'); const content=document.getElementById('aiResultContent');
+  document.getElementById('aiResultTitle').textContent = 'Doctor Performance Report';
+  box.classList.remove('d-none');
+  content.innerHTML='<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-warning"></span> Generating…</div>';
+  try {
+    const r = await API.post('/api/ai/doctor-insights/'+docId);
+    content.innerHTML = typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text;
+    content.classList.add('ai-report-body');
+  } catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'</div>'; }
+}
+</script>
+<%- include('../partials/scripts') %>

@@ -1,0 +1,55 @@
+<%- include('../partials/head', { title: 'Profile' }) %>
+<div class="app-wrapper">
+  <%- include('../partials/sidebar', { currentPage: '' }) %>
+  <div class="main-content">
+    <%- include('../partials/topbar', { title: 'My Profile' }) %>
+    <div class="page-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card text-center">
+            <div class="card-body py-4">
+              <div style="width:72px;height:72px;border-radius:50%;background:#4a7c59;color:#fff;font-size:28px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;"><%=user.name.charAt(0)%></div>
+              <h5 class="mb-1"><%=user.name%></h5>
+              <p class="text-muted mb-1" style="font-size:13px;"><%=user.email%></p>
+              <span class="badge <%=user.role==='admin'?'bg-warning text-dark':'bg-primary'%>"><%=user.role==='admin'?'👑 Admin':'🩺 Doctor'%></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="bi bi-person me-2 text-green"></i>Edit Profile</div>
+            <div class="card-body">
+              <% if (typeof success !== 'undefined') { %><div class="alert alert-success"><%=success%></div><% } %>
+              <form method="POST" action="/profile">
+                <div class="row g-2">
+                  <div class="col-6"><label class="form-label">Full Name</label><input type="text" name="name" class="form-control" value="<%=user.name%>" required/></div>
+                  <div class="col-6"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control" value="<%=user.phone||''%>"/></div>
+                  <% if (user.role === 'doctor') { %>
+                  <div class="col-6"><label class="form-label">Qualification</label><input type="text" name="qualification" class="form-control" value="<%=user.qualification||''%>"/></div>
+                  <div class="col-6"><label class="form-label">Specialization</label><input type="text" name="specialization" class="form-control" value="<%=user.specialization||''%>"/></div>
+                  <div class="col-6"><label class="form-label">Experience (years)</label><input type="number" name="experience_years" class="form-control" value="<%=user.experience_years||0%>"/></div>
+                  <% } %>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-save me-1"></i>Save Profile</button>
+              </form>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header fw-semibold"><i class="bi bi-lock me-2 text-green"></i>Change Password</div>
+            <div class="card-body">
+              <form method="POST" action="/profile/password">
+                <div class="row g-2">
+                  <div class="col-12"><label class="form-label">Current Password</label><input type="password" name="currentPassword" class="form-control" required/></div>
+                  <div class="col-6"><label class="form-label">New Password</label><input type="password" name="newPassword" class="form-control" required minlength="6"/></div>
+                  <div class="col-6"><label class="form-label">Confirm New</label><input type="password" name="confirmPassword" class="form-control" required minlength="6"/></div>
+                </div>
+                <button type="submit" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-key me-1"></i>Change Password</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/scripts') %>

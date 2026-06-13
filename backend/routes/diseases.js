@@ -1,0 +1,13 @@
+const express = require('express');
+const router = express.Router();
+const { getAllDiseases, getDiseaseCategories, getDiseaseById, createDisease, updateDisease, toggleDiseaseStatus, getDiseaseIntelligence, getDiseaseDetail } = require('../controllers/diseaseController');
+const { authenticate, authorizeAdmin } = require('../middleware/auth');
+router.get('/categories', authenticate, getDiseaseCategories);
+router.get('/intelligence', authenticate, getDiseaseIntelligence);
+router.get('/intelligence/:id', authenticate, getDiseaseDetail);
+router.get('/', authenticate, getAllDiseases);
+router.get('/:id', authenticate, getDiseaseById);
+router.post('/', authenticate, authorizeAdmin, createDisease);
+router.put('/:id', authenticate, authorizeAdmin, updateDisease);
+router.patch('/:id/toggle-status', authenticate, authorizeAdmin, toggleDiseaseStatus);
+module.exports = router;

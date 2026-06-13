@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const { getFollowupsByTreatment, createFollowup, updateFollowup, getUpcomingFollowups, getMissedFollowups } = require('../controllers/followupController');
+const { authenticate } = require('../middleware/auth');
+router.get('/upcoming', authenticate, getUpcomingFollowups);
+router.get('/missed', authenticate, getMissedFollowups);
+router.get('/treatment/:treatmentId', authenticate, getFollowupsByTreatment);
+router.post('/', authenticate, createFollowup);
+router.put('/:id', authenticate, updateFollowup);
+module.exports = router;

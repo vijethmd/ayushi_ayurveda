@@ -1,0 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const { getAllDoctors, getDoctorById, createDoctor, updateDoctor, toggleDoctorStatus, getDoctorPerformance } = require('../controllers/doctorController');
+const { authenticate, authorizeAdmin } = require('../middleware/auth');
+router.get('/', authenticate, getAllDoctors);
+router.get('/performance', authenticate, getDoctorPerformance);
+router.get('/:id', authenticate, getDoctorById);
+router.post('/', authenticate, authorizeAdmin, createDoctor);
+router.put('/:id', authenticate, authorizeAdmin, updateDoctor);
+router.patch('/:id/toggle-status', authenticate, authorizeAdmin, toggleDoctorStatus);
+module.exports = router;
