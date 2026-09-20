@@ -1,5 +1,5 @@
 -- AYUSHI Fix Script — run this in MySQL to fix login issues
--- Admin:   ayushiayurveda.repo@gmail.com / password123
+-- Admin:   ayushiayurveda.repo@gmail.com / (password not published — see README)
 -- Doctors: Ayushi@123
 
 USE ayushi_db;
@@ -13,7 +13,7 @@ ALTER TABLE Users
 -- Make ALL users verified and active
 UPDATE Users SET is_verified = 1, is_active = 1;
 
--- Admin credentials  (password123)
+-- Admin credentials
 UPDATE Users SET
   email        = 'ayushiayurveda.repo@gmail.com',
   password_hash = '$2a$10$5WQ2VlrLFLTpBvdMo1d.D.dRJpr/fzxlXJelQiAaJqQTOwV7I5Gre',

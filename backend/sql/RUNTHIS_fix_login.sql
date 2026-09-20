@@ -14,7 +14,7 @@ UPDATE Users SET is_verified = 1, is_active = 1;
 
 -- Step 3: Set ADMIN credentials
 --   Email:    ayushiayurveda.repo@gmail.com
---   Password: password123
+--   Password: (set your own — see README)
 UPDATE Users
 SET email         = 'ayushiayurveda.repo@gmail.com',
     password_hash = '$2a$10$AvQavycQdA6FKOjRBxdPmOqMzc0CKTO6XDRH7a98ll53SUkqDY376',

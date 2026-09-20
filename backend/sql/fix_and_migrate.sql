@@ -59,7 +59,7 @@ ALTER TABLE AI_Reports
 -- Step 5: Fix all user credentials
 UPDATE Users SET is_verified = 1, is_active = 1;
 
--- Admin: ayushiayurveda.repo@gmail.com / password123
+-- Admin: ayushiayurveda.repo@gmail.com / (password not published — see README)
 UPDATE Users SET
   email = 'ayushiayurveda.repo@gmail.com',
   password_hash = '$2a$10$V5LFuhmNXuBD/vpMps5XG.75fk/4xQXl8gdi13ChLS/TXOiHEmsHO',

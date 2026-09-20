@@ -241,7 +241,9 @@ Uploads live in `backend/uploads/`, are gitignored, and are served only through
 
 ## Login
 
-- **Admin:** `ayushiayurveda.repo@gmail.com` / `password123`
+- **Admin:** seeded by `sql/seed.sql`. Credentials are not published here — set your own with
+  `UPDATE Users SET password_hash=? WHERE role='admin'` using a bcrypt hash, or reset via
+  **Profile → Change Password** after first sign-in.
 - **Doctors:** join via **Sign Up → admin approval** (see below)
 
 ## Doctor onboarding (request → approval flow)

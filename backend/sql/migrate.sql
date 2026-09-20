@@ -56,7 +56,7 @@ ALTER TABLE AI_Reports
 -- Verify all users
 UPDATE Users SET is_verified = 1, is_active = 1;
 
--- Set admin credentials: ayushiayurveda.repo@gmail.com / password123
+-- Set the admin account. Replace the hash below with your own bcrypt hash.
 UPDATE Users SET
   email = 'ayushiayurveda.repo@gmail.com',
   password_hash = '$2a$10$5WQ2VlrLFLTpBvdMo1d.D.dRJpr/fzxlXJelQiAaJqQTOwV7I5Gre',
