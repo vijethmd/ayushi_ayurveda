@@ -72,7 +72,13 @@ Picking a facet opens a query box with live suggestions from
 `GET /api/public/suggest?type=&by=&q=`; results render at
 `GET /search?type=&by=&q=` (an empty `q` lists everything).
 
-`node sql/seed_public_directory.js` populates this layer — it adds
+`node sql/seed_india_expanded.js` broadens the directory to 86 practitioners across 50 cities
+in 21 states, 127 classical formulations, 569 brands and 37 manufacturers. Manufacturers are real
+licensed Indian houses at their actual headquarters; formulations are classical preparations from
+the Ayurvedic Formulary of India, which is why one medicine legitimately appears under several
+brands. Practitioners are synthetic entries placed in real localities — they are not real people.
+
+`node sql/seed_public_directory.js` populates the base layer — it adds
 `Users.clinic_name/area/city/state/consultation_fee/languages`,
 `Drugs.generic_name/botanical_name/dosage_form` and a `Medicine_Brands` table, then fills them
 with 26 doctors across 15 Indian cities and 183 brands from 16 real Indian Ayurvedic
