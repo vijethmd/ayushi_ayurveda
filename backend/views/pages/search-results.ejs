@@ -125,21 +125,21 @@
             <tbody>
               <% results.forEach(b => { %>
               <tr>
-                <td><strong><%= b.brand_name %></strong></td>
-                <td>
+                <td data-label="Brand"><strong><%= b.brand_name %></strong></td>
+                <td data-label="Manufacturer">
                   <a class="pub-link" href="/search?type=medicines&by=manufacturer&q=<%= encodeURIComponent(b.manufacturer) %>">
                     <%= b.manufacturer %>
                   </a>
                 </td>
-                <td>
+                <td data-label="Generic">
                   <a class="pub-link" href="/search?type=medicines&by=generic&q=<%= encodeURIComponent(b.generic_name || b.drug_name) %>">
                     <%= b.generic_name || b.drug_name %>
                   </a>
                   <% if (b.category) { %><span class="pub-sub-cell"><%= b.category %></span><% } %>
                 </td>
-                <td><%= b.dosage_form || '—' %></td>
-                <td><%= b.pack_size || '—' %></td>
-                <td class="text-end"><%= b.mrp ? money(b.mrp) : '—' %></td>
+                <td data-label="Form"><%= b.dosage_form || '—' %></td>
+                <td data-label="Pack"><%= b.pack_size || '—' %></td>
+                <td class="text-end" data-label="MRP"><%= b.mrp ? money(b.mrp) : '—' %></td>
               </tr>
               <% }) %>
             </tbody>

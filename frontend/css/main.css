@@ -424,7 +424,7 @@ a { text-decoration: none; color: inherit; }
   position: relative; display: block; margin: 0 0 20px;
   min-height: 1.24em; line-height: 1.24;
   font-family: 'Playfair Display', serif; font-weight: 700;
-  font-size: clamp(42px, 8.8vw, 100px);
+  font-size: clamp(34px, 8.8vw, 100px);
 }
 .pub-title-face {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -439,8 +439,8 @@ a { text-decoration: none; color: inherit; }
   opacity: 1; transform: none; filter: none;
   transition: opacity .7s ease .34s, transform .7s cubic-bezier(.2,.7,.25,1) .34s, filter .7s ease .34s;
 }
-.pub-title-face[lang="hi"] { font-family: 'Noto Serif Devanagari', 'Playfair Display', serif; font-weight: 600; font-size: .88em; }
-.pub-title-face[lang="en"] { letter-spacing: .03em; font-size: .92em; }
+.pub-title-face[lang="hi"] { font-family: 'Noto Serif Devanagari', 'Playfair Display', serif; font-weight: 600; font-size: 1em; }
+.pub-title-face[lang="en"] { letter-spacing: .02em; font-size: .86em; white-space: nowrap; }
 
 .pub-tagline {
   color: rgba(255,255,255,.82); font-family: 'Playfair Display', serif;
@@ -497,7 +497,11 @@ a { text-decoration: none; color: inherit; }
   display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;
   margin-bottom: 20px;
 }
-.pub-crumb { font-size: 14px; color: #8a9a90; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+.pub-crumb {
+  font-size: 14px; color: #8a9a90; margin: 0 0 8px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.pub-crumb > * { white-space: nowrap; }
 .pub-crumb a { color: var(--green); font-weight: 600; }
 .pub-crumb i { font-size: 12px; opacity: .6; }
 .pub-results-head h1 {
@@ -1075,4 +1079,133 @@ a { text-decoration: none; color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .mh-card:hover .mh-photo, .mh-card:hover .mh-portrait { transform: none; }
+}
+
+/* ══ Mobile pass ══════════════════════════════════════════════════════
+   The site-wide type increase was sized for desktop; at phone widths the
+   same values pushed headings onto extra lines and made cards feel
+   inconsistent. Scale the root down here and tighten the pieces that
+   depend on horizontal room. */
+@media (max-width: 767px) {
+  html { font-size: 15px; }
+
+  /* Header — one shape for both controls instead of a pill beside a square */
+  .pub-header { height: 60px; padding: 0 14px; }
+  .pub-header.scrolled { height: 54px; }
+  .pub-brand-mark { width: 34px; height: 34px; font-size: 18px; }
+  .pub-brand-name { font-size: 20px; }
+  .pub-btn { height: 38px; width: 38px; padding: 0; justify-content: center; }
+  .pub-btn i { font-size: 17px; }
+  .pub-caret { display: none; }
+  .pub-panel { top: 66px; }
+
+  /* Hero — the Latin face is the widest thing on the page */
+  .pub-hero { padding: 104px 18px 48px; }
+  .pub-title { margin-bottom: 14px; }
+  .pub-tagline { font-size: 15px; }
+  .shloka { padding: 16px 14px 13px; margin-bottom: 22px; border-radius: 14px; }
+  .shloka-sa { font-size: 17px; line-height: 1.7; }
+  .shloka-bar { gap: 8px; flex-direction: column; }
+  .shloka-bar cite { font-size: 11px; line-height: 1.5; text-align: center; }
+  .shloka-meaning { font-size: 12.5px; }
+  .pub-sub { font-size: 14px; margin-bottom: 26px; }
+  .pub-cta { height: 44px; padding: 0 18px; font-size: 14px; }
+  .pub-hero-cta { gap: 10px; margin-bottom: 40px; }
+  .pub-stats { gap: 14px 8px; padding-top: 26px; }
+  .pub-stat strong { font-size: 22px; }
+  .pub-stat span { font-size: 10px; letter-spacing: .4px; }
+
+  /* Page headers — keep the icon on the first line, not floating beside a wrap */
+  .pub-page-title { font-size: 23px; align-items: flex-start; gap: 9px; line-height: 1.25; }
+  .pub-page-title i { font-size: 20px; margin-top: 2px; }
+  .pub-page-lede { font-size: 13.5px; margin-bottom: 20px; }
+  .pub-crumb { font-size: 12px; row-gap: 2px; }
+  .edu-h2 { font-size: 17px; margin: 28px 0 14px; align-items: flex-start; }
+  .edu-h2 i { margin-top: 3px; }
+  .pub-section-title { font-size: 19px; }
+  .ayu-sub { font-size: 16px; }
+
+  /* Results + cards */
+  .pub-results { padding: 82px 0 44px; }
+  .pub-results-head h1 { font-size: 22px; }
+  .pub-tabs { gap: 6px; padding-bottom: 14px; margin-bottom: 18px; }
+  .pub-tab { padding: 6px 11px; font-size: 12px; }
+  .pub-grid, .mfr-grid { grid-template-columns: 1fr; gap: 12px; }
+  .pub-card, .mfr-card, .mh-card { padding: 16px; }
+  .pub-stat-row { padding: 14px 16px; gap: 18px; }
+  .pub-stat-row strong { font-size: 22px; }
+
+  /* Tag rows read as one block rather than a ragged two lines */
+  .pub-tag-row { gap: 5px; }
+  .pub-badge { font-size: 11px; padding: 3px 9px; }
+
+  /* Drug detail */
+  .dd-head { gap: 14px; }
+  .dd-lineage { width: 100%; min-width: 0; padding: 12px 16px; }
+  .dd-botanical { font-size: 13px; }
+  .dd-lede { font-size: 13.5px; }
+  .dd-prop, .dd-clin { padding: 13px; }
+
+  /* Education */
+  .edu-regulator { padding: 20px; gap: 18px; }
+  .edu-regulator h2 { font-size: 18px; }
+  .edu-regulator p { font-size: 13px; }
+  .edu-reg-links { width: 100%; }
+  .edu-reg-links .pub-link { align-items: flex-start; }
+  .edu-inst { padding: 14px; gap: 11px; }
+  .edu-inst h3 { font-size: 14px; }
+  .edu-degree { padding: 16px; }
+
+  /* Maharshis */
+  .mh-card-head { gap: 11px; }
+  .mh-photo, .mh-portrait { width: 62px !important; height: 62px !important; }
+  .mh-card h3 { font-size: 15px; }
+  .mh-text { font-size: 12.5px; }
+
+  /* Materia Medica tree */
+  .mm-branch > summary { padding: 13px 14px; }
+  .mm-branch-name { font-size: 14px; }
+  .mm-group { padding: 4px 14px 12px; }
+
+  /* Footer */
+  .pub-footer { padding: 26px 0; }
+  .pub-foot-col h4 { margin-bottom: 10px; }
+  .pub-foot-col li { margin-bottom: 9px; }
+}
+
+/* Very narrow phones — the Latin title is the binding constraint */
+@media (max-width: 380px) {
+  .pub-title-face[lang="en"] { font-size: .78em; }
+  .pub-stats { grid-template-columns: repeat(2, 1fr); }
+  .pub-page-title { font-size: 21px; }
+}
+
+/* Tables become stacked cards on phones. A six-column table in 375px hides
+   four of them behind a horizontal scroll nobody discovers, and it was the
+   one thing on the site that did not stack. */
+@media (max-width: 767px) {
+  .pub-table-wrap { overflow-x: visible; border: none; background: transparent; }
+  .pub-table { min-width: 0; width: 100%; display: block; font-size: 13px; }
+  .pub-table thead { display: none; }
+  .pub-table tbody { display: block; }
+  .pub-table tbody tr {
+    display: block; margin-bottom: 10px; padding: 4px 0;
+    background: #fff; border: 1px solid rgba(74,124,89,.12); border-radius: var(--card-radius);
+  }
+  .pub-table tbody tr:nth-child(even) { background: #fff; }
+  .pub-table tbody td {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 7px 14px; border-top: none; text-align: left !important;
+  }
+  .pub-table tbody td + td { border-top: 1px dashed rgba(74,124,89,.12); }
+  .pub-table tbody td::before {
+    content: attr(data-label);
+    flex: 0 0 88px; font-size: 11px; font-weight: 700; letter-spacing: .5px;
+    text-transform: uppercase; color: #9aa89f;
+  }
+  /* The brand name leads the card, so give it the full width */
+  .pub-table tbody td:first-child { padding-top: 11px; }
+  .pub-table tbody td:first-child::before { display: none; }
+  .pub-table tbody td:first-child strong { font-size: 15px; color: var(--green-dark); }
+  .pub-sub-cell { margin-top: 3px; }
 }

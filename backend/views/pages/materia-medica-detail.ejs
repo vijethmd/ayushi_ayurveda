@@ -91,11 +91,11 @@
           <tbody>
             <% brands.forEach(b => { %>
             <tr>
-              <td><strong><%= b.brand_name %></strong></td>
-              <td><a class="pub-link" href="/search?type=medicines&by=manufacturer&q=<%= encodeURIComponent(b.manufacturer) %>"><%= b.manufacturer %></a></td>
-              <td><%= b.dosage_form || '—' %></td>
-              <td><%= b.pack_size || '—' %></td>
-              <td class="text-end"><%= money(b.mrp) %></td>
+              <td data-label="Brand"><strong><%= b.brand_name %></strong></td>
+              <td data-label="Manufacturer"><a class="pub-link" href="/search?type=medicines&by=manufacturer&q=<%= encodeURIComponent(b.manufacturer) %>"><%= b.manufacturer %></a></td>
+              <td data-label="Form"><%= b.dosage_form || '—' %></td>
+              <td data-label="Pack"><%= b.pack_size || '—' %></td>
+              <td class="text-end" data-label="MRP"><%= money(b.mrp) %></td>
             </tr>
             <% }) %>
           </tbody>
