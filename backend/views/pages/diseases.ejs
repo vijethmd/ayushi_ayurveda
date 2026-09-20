@@ -27,7 +27,7 @@
               <tbody>
                 <% list.forEach(d=>{ %>
                 <tr>
-                  <td><span class="fw-medium" style="font-size:13px;"><%=d.disease_name%></span></td>
+                  <td><span class="fw-medium" style="font-size: 15px;"><%=d.disease_name%></span></td>
                   <td><small class="text-muted"><%=d.description||'—'%></small></td>
                   <td><span class="badge <%=d.is_active?'bg-success':'bg-secondary'%>"><%=d.is_active?'Active':'Inactive'%></span></td>
                   <td>

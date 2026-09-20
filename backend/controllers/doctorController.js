@@ -66,7 +66,7 @@ const updateDoctor = async (req, res) => {
   const { name, phone, qualification, specialization, experience_years } = req.body;
   try {
     await db.query(
-      'UPDATE Users SET name=?, phone=?, qualification=?, specialization=?, experience_years=? WHERE user_id=? AND role="doctor"',
+      "UPDATE Users SET name=?, phone=?, qualification=?, specialization=?, experience_years=? WHERE user_id=? AND role='doctor'",
       [name, phone, qualification, specialization, experience_years, id]
     );
     res.json({ success: true, message: 'Doctor updated' });
@@ -78,7 +78,7 @@ const updateDoctor = async (req, res) => {
 const toggleDoctorStatus = async (req, res) => {
   const { id } = req.params;
   try {
-    const [rows] = await db.query('SELECT is_active FROM Users WHERE user_id = ? AND role = "doctor"', [id]);
+    const [rows] = await db.query("SELECT is_active FROM Users WHERE user_id = ? AND role = 'doctor'", [id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Doctor not found' });
     const newStatus = rows[0].is_active ? 0 : 1;
     await db.query('UPDATE Users SET is_active = ? WHERE user_id = ?', [newStatus, id]);

@@ -362,7 +362,7 @@ Limit drug_verdicts to the most-evidenced 6 drugs. Be concise and honest about u
 const generateDoctorInsights = async (req, res) => {
   const { doctorId } = req.params;
   try {
-    const [doctor] = await db.query('SELECT * FROM Users WHERE user_id = ? AND role = "doctor"', [doctorId]);
+    const [doctor] = await db.query("SELECT * FROM Users WHERE user_id = ? AND role = 'doctor'", [doctorId]);
     if (doctor.length === 0) return res.status(404).json({ success: false, message: 'Doctor not found' });
 
     const [perf] = await db.query(`

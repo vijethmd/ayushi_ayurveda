@@ -17,12 +17,11 @@
       </div>
       <div class="row g-2 mb-3">
         <% [['Prescribed',drug.times_prescribed||0,'#4a7c59'],['Patients',drug.patients_treated||0,'#2980b9'],['Cure Rate',drug.avg_efficacy!=null?(drug.avg_efficacy+'%'):'—','#27ae60'],['Avg Days/Cure',drug.avg_days_to_cure!=null?(drug.avg_days_to_cure+'d'):'—','#c9a84c']].forEach(([l,v,c])=>{ %>
-        <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body py-2"><div class="fw-bold" style="font-size:20px;color:<%=c%>;font-family:'Playfair Display',serif;"><%=v%></div><div class="text-muted" style="font-size:11px;"><%=l%></div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body py-2"><div class="fw-bold" style="font-size: 22px;color:<%=c%>;font-family:'Playfair Display',serif;"><%=v%></div><div class="text-muted" style="font-size: 13px;"><%=l%></div></div></div></div>
         <% }) %>
       </div>
       <div id="aiBox" class="card mb-3 d-none" style="border:2px solid #c9a84c;background:#fdfbf7;">
         <div class="card-body">
-          <div class="alert alert-warning py-1 mb-2" style="font-size:12px;">AI-generated for research only. Not medical advice.</div>
           <div id="aiContent" class="ai-report-body"></div>
         </div>
       </div>
@@ -35,7 +34,7 @@
               <tbody>
                 <% (diseaseBreakdown||[]).forEach(d=>{ const col=d.avg_efficacy>=75?'#27ae60':d.avg_efficacy>=50?'#f39c12':'#e74c3c'; %>
                 <tr><td><small class="fw-medium"><%=d.disease_name%></small></td><td><small><%=d.prescriptions%></small></td>
-                <td><% if(d.avg_efficacy){ %><span style="font-size:12px;font-weight:600;color:<%=col%>;"><%=d.avg_efficacy%>%</span><% }else{ %>—<% } %></td>
+                <td><% if(d.avg_efficacy){ %><span style="font-size: 14px;font-weight:600;color:<%=col%>;"><%=d.avg_efficacy%>%</span><% }else{ %>—<% } %></td>
                 <td><small style="color:#27ae60;font-weight:600;"><%=d.cured%></small></td></tr>
                 <% }) %>
                 <% if (!diseaseBreakdown?.length) { %><tr><td colspan="4" class="text-center py-3 text-muted">No data</td></tr><% } %>
@@ -52,11 +51,11 @@
             <tbody>
               <% (administrations||[]).forEach(a=>{ %>
               <tr>
-                <td><div style="font-size:12px;font-weight:500;"><%=a.patient_name%></div><small class="text-muted monospace"><%=a.patient_code%> <%=a.age%>y</small></td>
+                <td><div style="font-size: 14px;font-weight:500;"><%=a.patient_name%></div><small class="text-muted monospace"><%=a.patient_code%> <%=a.age%>y</small></td>
                 <td><small><%=a.disease_name%></small></td>
                 <td><small><%=a.doctor_name%></small></td>
                 <td><small><%=a.dosage||'—'%> <%=a.frequency||''%></small></td>
-                <td><span class="badge <%=a.treatment_status==='Cured'?'bg-success':a.treatment_status==='Ongoing'?'bg-primary':'bg-secondary'%>" style="font-size:10px;"><%=a.treatment_status%></span></td>
+                <td><span class="badge <%=a.treatment_status==='Cured'?'bg-success':a.treatment_status==='Ongoing'?'bg-primary':'bg-secondary'%>" style="font-size: 12px;"><%=a.treatment_status%></span></td>
               </tr>
               <% }) %>
               <% if (!administrations?.length) { %><tr><td colspan="5" class="text-center py-3 text-muted">No records</td></tr><% } %>
@@ -79,7 +78,7 @@ async function genDrugAI(refresh) {
     const md=typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text;
     let bar='<div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">';
     bar+='<small class="text-muted">'+(r.cached?('<i class="bi bi-clock-history me-1"></i>Saved report'+(r.generated_at?' · '+new Date(r.generated_at).toLocaleString():'')):'<i class="bi bi-stars me-1"></i>Freshly generated')+'</small>';
-    bar+='<button class="btn btn-xs btn-outline-secondary" style="font-size:11px;padding:2px 8px;" onclick="genDrugAI(true)"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button></div>';
+    bar+='<button class="btn btn-xs btn-outline-secondary" style="font-size: 13px;padding:2px 8px;" onclick="genDrugAI(true)"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button></div>';
     content.innerHTML=bar+md; content.classList.add('ai-report-body');
   }
   catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'</div>'; }

@@ -1,0 +1,208 @@
+<%
+  // locals: facets, loggedIn, active = { type, by, q }
+  const act = (typeof active !== 'undefined' && active) ? active : { type:'', by:'', q:'' };
+%>
+<header class="pub-header" id="pubHeader">
+  <a href="/" class="pub-brand">
+    <span class="pub-brand-mark"><i class="bi bi-flower2"></i></span>
+    <span>
+      <span class="pub-brand-name">AYUSHI</span>
+      <span class="pub-brand-sub">AYURVEDIC CLINICAL SYSTEM</span>
+    </span>
+  </a>
+
+  <nav class="pub-nav">
+    <div class="pub-links">
+      <a href="/materia-medica" class="<%= (typeof navActive !== 'undefined' && navActive==='materia') ? 'on' : '' %>">Materia Medica</a>
+      <a href="/manufacturers"  class="<%= (typeof navActive !== 'undefined' && navActive==='manufacturers') ? 'on' : '' %>">Manufacturers</a>
+      <a href="/education"      class="<%= (typeof navActive !== 'undefined' && navActive==='education') ? 'on' : '' %>">Education</a>
+    </div>
+
+    <!-- ── Search ─────────────────────────────────────────────── -->
+    <div class="pub-search" id="pubSearch">
+      <button type="button" class="pub-btn pub-btn-ghost" id="searchToggle"
+              aria-haspopup="true" aria-expanded="false" aria-controls="searchPanel">
+        <i class="bi bi-search"></i><span>Search</span>
+        <i class="bi bi-chevron-down pub-caret"></i>
+      </button>
+
+      <div class="pub-panel" id="searchPanel" role="menu" hidden>
+        <!-- Step 1: pick what to search -->
+        <div class="pub-panel-step" data-step="menu">
+          <% Object.entries(facets).forEach(([type, group]) => { %>
+          <div class="pub-group-label"><i class="bi <%= group.icon %>"></i><%= group.label %></div>
+          <% Object.entries(group.by).forEach(([by, f]) => { %>
+          <button type="button" class="pub-option" role="menuitem"
+                  data-type="<%= type %>" data-by="<%= by %>"
+                  data-label="<%= f.label %>" data-placeholder="<%= f.placeholder %>"
+                  data-group="<%= group.label %>">
+            <i class="bi <%= f.icon %>"></i>
+            <span>By <%= f.label %></span>
+            <i class="bi bi-arrow-right pub-option-go"></i>
+          </button>
+          <% }) %>
+          <% }) %>
+          <div class="pub-panel-browse">
+            <a href="/materia-medica"><i class="bi bi-diagram-3"></i>Materia Medica</a>
+            <a href="/manufacturers"><i class="bi bi-building"></i>Manufacturers</a>
+            <a href="/education"><i class="bi bi-mortarboard"></i>AYUSH Education</a>
+          </div>
+        </div>
+
+        <!-- Step 2: type the query -->
+        <div class="pub-panel-step" data-step="query" hidden>
+          <div class="pub-query-head">
+            <button type="button" class="pub-back" id="searchBack" aria-label="Back to search options">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+            <div>
+              <div class="pub-query-group" id="qGroup"></div>
+              <div class="pub-query-label" id="qLabel"></div>
+            </div>
+          </div>
+          <form class="pub-query-form" id="searchForm" action="/search" method="GET">
+            <input type="hidden" name="type" id="qType"/>
+            <input type="hidden" name="by"   id="qBy"/>
+            <div class="pub-input-wrap">
+              <i class="bi bi-search"></i>
+              <input type="text" name="q" id="qInput" autocomplete="off" class="pub-input"/>
+              <button type="submit" class="pub-go" aria-label="Search"><i class="bi bi-arrow-right-short"></i></button>
+            </div>
+          </form>
+          <div class="pub-suggest-label" id="sugLabel">Popular</div>
+          <div class="pub-suggest" id="searchSuggest"></div>
+        </div>
+      </div>
+    </div>
+
+    <% if (loggedIn) { %>
+    <a href="/dashboard" class="pub-btn pub-btn-solid"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+    <% } else { %>
+    <a href="/login" class="pub-btn pub-btn-solid" id="signInBtn"><i class="bi bi-box-arrow-in-right"></i><span>Sign In</span></a>
+    <% } %>
+  </nav>
+</header>
+
+<script>
+(function () {
+  const root    = document.getElementById('pubSearch');
+  const toggle  = document.getElementById('searchToggle');
+  const panel   = document.getElementById('searchPanel');
+  const stepMenu  = panel.querySelector('[data-step="menu"]');
+  const stepQuery = panel.querySelector('[data-step="query"]');
+  const input   = document.getElementById('qInput');
+  const suggest = document.getElementById('searchSuggest');
+  const sugLabel= document.getElementById('sugLabel');
+  let current = { type: '', by: '' };
+
+  const openPanel = () => {
+    panel.hidden = false;
+    root.classList.add('open');
+    toggle.setAttribute('aria-expanded', 'true');
+  };
+  const closePanel = () => {
+    panel.hidden = true;
+    root.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+  };
+  const showMenu = () => { stepMenu.hidden = false; stepQuery.hidden = true; };
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (panel.hidden) { openPanel(); if (!current.type) showMenu(); }
+    else closePanel();
+  });
+  document.addEventListener('click', (e) => { if (!root.contains(e.target)) closePanel(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || panel.hidden) return;
+    if (!stepQuery.hidden) { showMenu(); input.blur(); } else closePanel();
+  });
+  document.getElementById('searchBack').addEventListener('click', showMenu);
+
+  // Pick a facet → go to the query step
+  panel.querySelectorAll('.pub-option').forEach(btn => {
+    btn.addEventListener('click', () => selectFacet(btn.dataset, ''));
+  });
+
+  function selectFacet(d, q) {
+    current = { type: d.type, by: d.by };
+    document.getElementById('qType').value  = d.type;
+    document.getElementById('qBy').value    = d.by;
+    document.getElementById('qGroup').textContent = d.group;
+    document.getElementById('qLabel').textContent = 'Search by ' + d.label;
+    input.placeholder = d.placeholder || '';
+    input.value = q || '';
+    stepMenu.hidden = true;
+    stepQuery.hidden = false;
+    openPanel();
+    input.focus();
+    loadSuggestions('');
+  }
+
+  // Live suggestions
+  let timer = null, seq = 0;
+  const loadSuggestions = (q) => {
+    const mine = ++seq;
+    sugLabel.textContent = q ? 'Matches' : 'Popular';
+    fetch(`/api/public/suggest?type=${encodeURIComponent(current.type)}&by=${encodeURIComponent(current.by)}&q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (mine !== seq) return;                     // a newer keystroke won
+        suggest.innerHTML = '';
+        if (!data.items || !data.items.length) {
+          suggest.innerHTML = '<div class="pub-suggest-empty">No matches — press Enter to search anyway.</div>';
+          return;
+        }
+        data.items.forEach(it => {
+          const a = document.createElement('a');
+          a.className = 'pub-chip';
+          a.href = `/search?type=${encodeURIComponent(current.type)}&by=${encodeURIComponent(current.by)}&q=${encodeURIComponent(it.value)}`;
+          a.innerHTML = `<span>${it.value.replace(/</g,'&lt;')}</span>` +
+                        (it.count > 1 ? `<em>${it.count}</em>` : '');
+          suggest.appendChild(a);
+        });
+      })
+      .catch(() => { if (mine === seq) suggest.innerHTML = ''; });
+  };
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => loadSuggestions(input.value.trim()), 180);
+  });
+
+  // Enter submits the search from any .pub-input (dropdown or the refine box
+  // on the results page) — implicit submission is unreliable across browsers
+  // when the form's only other controls are hidden inputs.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const box = e.target.closest?.('.pub-input');
+    const form = box && box.closest('form');
+    if (form) { e.preventDefault(); form.submit(); }
+  });
+
+  // Deep-link: chips elsewhere on the page can open the panel pre-filled
+  window.ayushiSearch = (type, by, label, group, placeholder, q) =>
+    selectFacet({ type, by, label, group, placeholder }, q);
+
+  // On the results page, restore the active facet so the panel reopens in context
+  const a = { type: '<%= act.type %>', by: '<%= act.by %>' };
+  if (a.type && a.by) {
+    const btn = panel.querySelector(`.pub-option[data-type="${a.type}"][data-by="${a.by}"]`);
+    if (btn) {
+      current = a;
+      document.getElementById('qType').value = a.type;
+      document.getElementById('qBy').value   = a.by;
+      document.getElementById('qGroup').textContent = btn.dataset.group;
+      document.getElementById('qLabel').textContent = 'Search by ' + btn.dataset.label;
+      input.placeholder = btn.dataset.placeholder;
+      input.value = <%- JSON.stringify(act.q || '') %>;
+      stepMenu.hidden = true; stepQuery.hidden = false;
+    }
+  }
+
+  // Shrink the header once the page scrolls
+  const header = document.getElementById('pubHeader');
+  const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 12);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+</script>

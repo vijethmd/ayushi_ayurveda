@@ -34,13 +34,12 @@
       <div class="row g-2 mb-3">
         <% const avgDaysCure = (evidence && evidence.overview.avg_days_to_cure != null) ? evidence.overview.avg_days_to_cure + 'd' : '—'; %>
         <% [['Total',stats.total,'#4a7c59'],['Active',stats.active,'#2980b9'],['Cured',stats.cured,'#27ae60'],['Left',stats.left_treatment,'#e74c3c'],['Cure Rate',(stats.cure_rate||0)+'%','#c9a84c'],['Avg Days/Cure',avgDaysCure,'#8e44ad']].forEach(([l,v,c])=>{ %>
-        <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fw-bold" style="font-size:20px;color:<%=c%>;font-family:'Playfair Display',serif;"><%=v||0%></div><div class="text-muted" style="font-size:11px;"><%=l%></div></div></div></div>
+        <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fw-bold" style="font-size: 22px;color:<%=c%>;font-family:'Playfair Display',serif;"><%=v||0%></div><div class="text-muted" style="font-size: 13px;"><%=l%></div></div></div></div>
         <% }) %>
       </div>
       <div id="aiReportBox" class="card mb-3 d-none" style="border:2px solid #c9a84c;background:#fdfbf7;">
         <div class="card-body">
           <div class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-robot text-warning"></i><span class="fw-semibold">AI Disease Intelligence Report</span></div>
-          <div class="alert alert-warning py-1 mb-2" style="font-size:12px;">AI-generated insights for research purposes only. Not medical advice.</div>
           <div id="aiReportContent" class="ai-report-body"></div>
         </div>
       </div>
@@ -68,14 +67,14 @@
                    const confColor = {High:'#27ae60',Moderate:'#f39c12',Low:'#e67e22',Insufficient:'#95a5a6'}[drug.confidence]||'#95a5a6';
               %>
               <tr>
-                <td><div class="fw-medium" style="font-size:13px;"><%=drug.drug_name%></div><small class="text-muted"><%=drug.category||'—'%></small></td>
+                <td><div class="fw-medium" style="font-size: 15px;"><%=drug.drug_name%></div><small class="text-muted"><%=drug.category||'—'%></small></td>
                 <td><small><%=drug.n_treatments%></small></td>
                 <td><small style="color:#27ae60;font-weight:600;"><%=drug.cured_with%></small></td>
                 <td><small><%=drug.cure_rate_with%>%</small></td>
                 <td><small><%=drug.cure_rate_without==null?'—':drug.cure_rate_without+'%'%></small></td>
-                <td><span style="font-size:12px;font-weight:700;color:<%=liftColor%>;"><%=lift==null?'—':(lift>0?'+'+lift:lift)+'%'%></span></td>
+                <td><span style="font-size: 14px;font-weight:700;color:<%=liftColor%>;"><%=lift==null?'—':(lift>0?'+'+lift:lift)+'%'%></span></td>
                 <td><small><%=drug.avg_days_to_cure==null?'—':drug.avg_days_to_cure+'d'%></small></td>
-                <td><span class="badge" style="background:<%=confColor%>1a;color:<%=confColor%>;border:1px solid <%=confColor%>55;font-size:10px;"><%=drug.confidence%></span></td>
+                <td><span class="badge" style="background:<%=confColor%>1a;color:<%=confColor%>;border:1px solid <%=confColor%>55;font-size: 12px;"><%=drug.confidence%></span></td>
               </tr>
               <% }) %>
             </tbody>
@@ -97,7 +96,7 @@
                 <td><small><%=r.n_treatments%></small></td>
                 <td><small style="color:#27ae60;font-weight:600;"><%=r.cure_rate%>%</small></td>
                 <td><small><%=r.avg_days_to_cure==null?'—':r.avg_days_to_cure+'d'%></small></td>
-                <td><span class="badge" style="background:<%=confColor%>1a;color:<%=confColor%>;border:1px solid <%=confColor%>55;font-size:10px;"><%=r.confidence%></span></td>
+                <td><span class="badge" style="background:<%=confColor%>1a;color:<%=confColor%>;border:1px solid <%=confColor%>55;font-size: 12px;"><%=r.confidence%></span></td>
               </tr>
               <% }) %>
             </tbody>
@@ -120,9 +119,9 @@
               <% const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
               <% evidence.response_samples.forEach(r=>{ %>
               <tr>
-                <td><a href="/patients/<%=r.patient_id%>" class="monospace text-decoration-none" style="font-size:12px;"><%= r.patient_code %></a></td>
+                <td><a href="/patients/<%=r.patient_id%>" class="monospace text-decoration-none" style="font-size: 14px;"><%= r.patient_code %></a></td>
                 <td><span class="status-badge <%= sc[r.status]||'' %>"><%= r.status %></span></td>
-                <td style="font-size:12.5px;line-height:1.5;"><%= r.note %></td>
+                <td style="font-size: 14px;line-height:1.5;"><%= r.note %></td>
               </tr>
               <% }) %>
             </tbody>
@@ -141,13 +140,13 @@
                    const endRef = p.end_date ? new Date(p.end_date) : new Date();
                    const durDays = p.start_date ? Math.max(0, Math.round((endRef - new Date(p.start_date))/86400000)) : null; %>
               <tr class="cursor-pointer" onclick="location.href='/patients/<%=p.patient_id%>'">
-                <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=p.patient_name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=p.patient_name%></div><small class="monospace text-muted"><%=p.patient_code%></small></div></div></td>
+                <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=p.patient_name.charAt(0)%></div><div><div style="font-size: 15px;font-weight:500;"><%=p.patient_name%></div><small class="monospace text-muted"><%=p.patient_code%></small></div></div></td>
                 <td><small><%=p.doctor_name%></small></td>
                 <td><span class="status-badge <%=sc[p.status]||''%>"><%=p.status%></span></td>
                 <td><small class="text-muted"><%=durDays==null?'—':durDays+'d'%><%=p.end_date?'':' (ongoing)'%></small></td>
                 <td style="min-width:220px;">
                   <small><%=p.drugs_summary || careText(p.medicines_json) || '—'%></small>
-                  <% if (p.avg_drug_efficacy) { %><div><span class="badge bg-light text-success border" style="font-size:10px;">Drug efficacy <%=p.avg_drug_efficacy%>%</span></div><% } %>
+                  <% if (p.avg_drug_efficacy) { %><div><span class="badge bg-light text-success border" style="font-size: 12px;">Drug efficacy <%=p.avg_drug_efficacy%>%</span></div><% } %>
                   <% if (p.side_effects) { %><div><small class="text-danger">Side effects: <%=p.side_effects%></small></div><% } %>
                 </td>
                 <td style="min-width:220px;"><small><%=careText(p.lifestyle_json) || 'Lifestyle not recorded'%></small><br/><small class="text-muted"><%=careText(p.diet_json) || 'Diet not recorded'%></small></td>
@@ -176,7 +175,7 @@ async function genDiseaseAI(refresh) {
     const md=typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text;
     let bar='<div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">';
     bar+='<small class="text-muted">'+(r.cached?('<i class="bi bi-clock-history me-1"></i>Saved report'+(r.generated_at?' · '+new Date(r.generated_at).toLocaleString():'')):'<i class="bi bi-stars me-1"></i>Freshly generated')+'</small>';
-    bar+='<button class="btn btn-xs btn-outline-secondary" style="font-size:11px;padding:2px 8px;" onclick="genDiseaseAI(true)"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button></div>';
+    bar+='<button class="btn btn-xs btn-outline-secondary" style="font-size: 13px;padding:2px 8px;" onclick="genDiseaseAI(true)"><i class="bi bi-arrow-clockwise me-1"></i>Regenerate</button></div>';
     content.innerHTML=bar+md; content.classList.add('ai-report-body');
   }
   catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'</div>'; }

@@ -1,0 +1,53 @@
+<%- include('../partials/head', { title: title }) %>
+<div class="pub-page pub-page-results">
+  <%- include('../partials/public-header', { facets, loggedIn, active:{type:'',by:'',q:''}, navActive:'manufacturers' }) %>
+
+  <section class="pub-results">
+    <div class="pub-wrap">
+      <p class="pub-crumb"><a href="/">Home</a> <i class="bi bi-chevron-right"></i> Manufacturers</p>
+      <h1 class="pub-page-title"><i class="bi bi-building"></i> AYUSH manufacturers in India</h1>
+      <p class="pub-page-lede">The licensed houses whose products appear in this catalogue.</p>
+
+      <div class="pub-stat-row">
+        <div><strong><%= totals.makers %></strong><span>Manufacturers</span></div>
+        <div><strong><%= totals.brands %></strong><span>Brands catalogued</span></div>
+        <div><strong><%= totals.states %></strong><span>States &amp; UTs</span></div>
+      </div>
+
+      <div class="mfr-grid">
+        <% makers.forEach(m => { %>
+        <article class="mfr-card">
+          <div class="mfr-head">
+            <span class="mfr-mark"><%= m.short.replace(/[^A-Za-z]/g,'').charAt(0).toUpperCase() %></span>
+            <div>
+              <h3><%= m.short %></h3>
+              <p class="mfr-legal"><%= m.key %></p>
+            </div>
+            <% if (m.founded) { %><span class="mfr-year"><%= m.founded %></span><% } %>
+          </div>
+
+          <ul class="pub-meta">
+            <% if (m.hq) { %><li><i class="bi bi-geo-alt"></i><%= m.hq %></li><% } %>
+            <% if (m.founder) { %><li><i class="bi bi-person"></i>Founded by <%= m.founder %></li><% } %>
+            <% if (m.focus) { %><li><i class="bi bi-capsule"></i><%= m.focus %></li><% } %>
+          </ul>
+
+          <div class="pub-card-foot">
+            <span class="pub-fee"><strong><%= m.brand_count %></strong>
+              <em>brand<%= Number(m.brand_count) === 1 ? '' : 's' %> · <%= m.formulation_count %> formulations</em></span>
+            <a class="pub-link" href="/search?type=medicines&by=manufacturer&q=<%= encodeURIComponent(m.key) %>">
+              View catalogue <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        </article>
+        <% }) %>
+      </div>
+
+    </div>
+  </section>
+
+  <%- include('../partials/public-footer', { references }) %>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

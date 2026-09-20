@@ -14,17 +14,17 @@
           <div class="card h-100">
             <div class="card-body">
               <div class="d-flex gap-3 mb-3">
-                <div class="pat-avatar" style="width:48px;height:48px;font-size:18px;font-weight:700;background:#e8f5e9;color:#4a7c59;"><%=d.name.charAt(0)%></div>
+                <div class="pat-avatar" style="width:48px;height:48px;font-size: 20px;font-weight:700;background:#e8f5e9;color:#4a7c59;"><%=d.name.charAt(0)%></div>
                 <div class="flex-grow-1 min-w-0">
                   <div class="fw-semibold text-truncate"><%=d.name%></div>
                   <small class="text-muted"><%=d.qualification||''%></small>
-                  <div><span class="badge bg-light text-primary border mt-1" style="font-size:10px;"><%=d.specialization||'General'%></span></div>
+                  <div><span class="badge bg-light text-primary border mt-1" style="font-size: 12px;"><%=d.specialization||'General'%></span></div>
                 </div>
                 <span class="badge <%=d.is_active?'bg-success':'bg-secondary'%>" style="height:fit-content;"><%=d.is_active?'Active':'Inactive'%></span>
               </div>
               <div class="row g-1 mb-3">
                 <% [['Patients',d.total_patients||0],['Cured',d.cured_patients||0],['Cure%',(d.cure_rate||0)+'%'],['Exp',d.experience_years+'y']].forEach(([l,v])=>{ %>
-                <div class="col-3 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:4px 0;"><div style="font-size:13px;font-weight:700;color:#2d5c3e;"><%=v%></div><div style="font-size:10px;color:#888;"><%=l%></div></div></div>
+                <div class="col-3 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:4px 0;"><div style="font-size: 15px;font-weight:700;color:#2d5c3e;"><%=v%></div><div style="font-size: 12px;color:#888;"><%=l%></div></div></div>
                 <% }) %>
               </div>
               <div class="d-flex gap-2">

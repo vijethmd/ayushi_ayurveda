@@ -20,10 +20,39 @@
         }).filter(Boolean);
       %>
 
+      <%
+        const OUTCOME_CLASS = { Pending:'bg-secondary', Improved:'bg-success', 'No Change':'bg-warning text-dark',
+                                Worsened:'bg-danger', Cured:'bg-success', Referred:'bg-info text-dark' };
+        const FINAL_CLASS   = { Active:'bg-primary', Discharged:'bg-success', Referred:'bg-info text-dark',
+                                'Lost to Follow-up':'bg-warning text-dark', Deceased:'bg-dark' };
+        const FILE_ICON = (mime) => mime.includes('pdf') ? 'bi-file-earmark-pdf'
+                                  : mime.includes('word') ? 'bi-file-earmark-word'
+                                  : mime.startsWith('image/') ? 'bi-file-earmark-image' : 'bi-file-earmark';
+        const kb = (n) => n > 1048576 ? (n/1048576).toFixed(1)+' MB' : Math.max(1, Math.round(n/1024))+' KB';
+        const attachmentsFor = (consultationId) =>
+          (attachments||[]).filter(a => a.consultation_id === consultationId);
+        const dischargeDocs = (treatmentId) =>
+          (attachments||[]).filter(a => a.kind === 'discharge_summary' && a.treatment_id === treatmentId);
+        const ACCEPT = '.pdf,.doc,.docx,.jpg,.jpeg,.png';
+      %>
+
+      <% if (typeof flashOk !== 'undefined' && flashOk) { %>
+      <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+        <i class="bi bi-check-circle me-1"></i><%= flashOk %>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+      </div>
+      <% } %>
+      <% if (typeof flashErr !== 'undefined' && flashErr) { %>
+      <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i><%= flashErr %>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+      </div>
+      <% } %>
+
       <!-- Back + Header -->
       <div class="d-flex align-items-center gap-3 mb-4">
         <a href="/patients" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
-        <div class="pat-avatar" style="width:48px;height:48px;font-size:18px;"><%=patient.name.charAt(0)%></div>
+        <div class="pat-avatar" style="width:48px;height:48px;font-size: 20px;"><%=patient.name.charAt(0)%></div>
         <div class="flex-grow-1">
           <h5 class="mb-0 text-green"><%=patient.name%></h5>
           <small class="text-muted"><%=patient.patient_code%> &middot; <%=patient.age%> yrs &middot; <%=patient.gender%> &middot; <%=patient.occupation||'—'%></small>
@@ -31,6 +60,9 @@
         <a href="/timeline/<%=patient.patient_id%>" class="btn btn-outline-primary btn-sm">
           <i class="bi bi-clock-history me-1"></i>Timeline
         </a>
+        <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#addConsultationModal">
+          <i class="bi bi-clipboard2-pulse me-1"></i>New Consultation
+        </button>
         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addTreatmentModal">
           <i class="bi bi-plus me-1"></i>New Treatment
         </button>
@@ -42,8 +74,8 @@
            ['Treatments',treatments.length],['Drugs Prescribed',drugAdministrations.length]].forEach(([l,v]) => { %>
         <div class="col-6 col-md-3">
           <div class="card"><div class="card-body py-2 px-3">
-            <div class="text-muted" style="font-size:11px;"><%=l%></div>
-            <div class="fw-semibold" style="font-size:14px;"><%=v%></div>
+            <div class="text-muted" style="font-size: 13px;"><%=l%></div>
+            <div class="fw-semibold" style="font-size: 16px;"><%=v%></div>
           </div></div>
         </div>
         <% }) %>
@@ -51,7 +83,8 @@
 
       <!-- Tabs -->
       <ul class="nav nav-tabs mb-3" id="patTab">
-        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#treatTab">Treatments (<%=treatments.length%>)</a></li>
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#consultTab">Consultations (<%=consultations.length%>)</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#treatTab">Treatments (<%=treatments.length%>)</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#drugTab">Drugs (<%=drugAdministrations.length%>)</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#timelineTab">Timeline (<%=timeline.length%>)</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#aiTab">AI Reports (<%=aiReports.length%>)</a></li>
@@ -60,8 +93,111 @@
 
       <div class="tab-content">
 
+        <!-- Consultations: the initial query recorded when the patient comes in -->
+        <div class="tab-pane fade show active" id="consultTab">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">
+              Chief complaint, diagnosis, reports, duration, drugs advised and outcome — one record per visit.
+            </small>
+            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addConsultationModal">
+              <i class="bi bi-plus me-1"></i>Record consultation
+            </button>
+          </div>
+
+          <% if (!consultations.length) { %>
+          <div class="card"><div class="card-body text-center py-5">
+            <i class="bi bi-clipboard2-pulse" style="font-size: 37px;color:#c8e6c9;"></i>
+            <p class="text-muted mt-2 mb-3" style="font-size: 15px;">
+              No consultation recorded yet. The first thing a patient gets on arrival is an
+              initial query — chief complaint, diagnosis, duration and the drugs advised.
+            </p>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addConsultationModal">
+              <i class="bi bi-plus me-1"></i>Record the initial consultation
+            </button>
+          </div></div>
+          <% } %>
+
+          <% consultations.forEach(c => {
+               const cMeds = careList(c.drugs_json);
+               const docs  = attachmentsFor(c.consultation_id);
+          %>
+          <div class="card mb-2 consult-card">
+            <div class="card-body">
+              <div class="d-flex align-items-start gap-2 mb-2 flex-wrap">
+                <span class="badge bg-light text-dark border"><%= c.visit_type %></span>
+                <span class="badge <%= OUTCOME_CLASS[c.outcome] || 'bg-secondary' %>"><%= c.outcome %></span>
+                <small class="text-muted ms-auto">
+                  <i class="bi bi-calendar3 me-1"></i><%= c.consultation_date %>
+                  <% if (c.doctor_name) { %> &middot; <%= c.doctor_name %><% } %>
+                </small>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="consult-label"><i class="bi bi-chat-left-text me-1"></i>a. Chief complaint</div>
+                  <div class="consult-value"><%= c.chief_complaint %></div>
+                </div>
+                <div class="col-md-6">
+                  <div class="consult-label"><i class="bi bi-clipboard2-check me-1"></i>b. Diagnosis</div>
+                  <div class="consult-value">
+                    <%= c.diagnosis || '—' %>
+                    <% if (c.disease_name) { %><span class="badge bg-green-soft text-green ms-1"><%= c.disease_name %></span><% } %>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="consult-label"><i class="bi bi-hourglass-split me-1"></i>d. Duration</div>
+                  <div class="consult-value">
+                    <%= c.duration_value ? c.duration_value + ' ' + c.duration_unit : '—' %>
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="consult-label"><i class="bi bi-capsule me-1"></i>e. Drugs advised</div>
+                  <div class="consult-value">
+                    <% if (cMeds.length) { %>
+                      <% cMeds.forEach(m => { %><span class="badge bg-light text-dark border me-1 mb-1" style="font-weight:500;"><%= m %></span><% }) %>
+                    <% } else { %><span class="text-muted fst-italic">None recorded</span><% } %>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="consult-label"><i class="bi bi-paperclip me-1"></i>c. Reports</div>
+                  <div class="consult-value">
+                    <% if (docs.length) { %>
+                      <% docs.forEach(a => { %>
+                      <a class="doc-chip" href="/attachments/<%= a.attachment_id %>" target="_blank" rel="noopener"
+                         title="<%= a.original_name %> · <%= kb(a.size_bytes) %>">
+                        <i class="bi <%= FILE_ICON(a.mime_type) %>"></i>
+                        <span><%= a.original_name.length > 22 ? a.original_name.slice(0,20)+'…' : a.original_name %></span>
+                      </a>
+                      <% }) %>
+                    <% } else { %><span class="text-muted fst-italic">None uploaded</span><% } %>
+                  </div>
+                </div>
+
+                <% if (c.examination_notes || c.outcome_notes) { %>
+                <div class="col-12">
+                  <div class="consult-label"><i class="bi bi-journal-text me-1"></i>f. Notes</div>
+                  <div class="consult-value">
+                    <% if (c.examination_notes) { %><div><%= c.examination_notes %></div><% } %>
+                    <% if (c.outcome_notes) { %><div class="text-muted"><em>Outcome:</em> <%= c.outcome_notes %></div><% } %>
+                  </div>
+                </div>
+                <% } %>
+              </div>
+
+              <div class="text-end mt-2">
+                <button class="btn btn-sm btn-outline-primary"
+                        onclick="openOutcome(<%= c.consultation_id %>, '<%= c.outcome %>')">
+                  <i class="bi bi-arrow-repeat me-1"></i>Update outcome / add report
+                </button>
+              </div>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+
         <!-- Treatments -->
-        <div class="tab-pane fade show active" id="treatTab">
+        <div class="tab-pane fade" id="treatTab">
           <div class="d-flex justify-content-end mb-2 gap-2">
             <button class="btn btn-sm btn-outline-warning" onclick="genDropoutRisk()"><i class="bi bi-robot me-1"></i>Dropout Risk</button>
             <button class="btn btn-sm btn-outline-info" onclick="genPatientSummary()"><i class="bi bi-robot me-1"></i>AI Summary</button>
@@ -71,10 +207,10 @@
           </div>
           <div class="table-responsive">
             <table class="table table-hover align-middle">
-              <thead><tr><th>Disease</th><th>Doctor</th><th>Status</th><th>Period</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Disease</th><th>Doctor</th><th>Status</th><th>Final status</th><th>Period</th><th>Actions</th></tr></thead>
               <tbody>
                 <% if (!treatments.length) { %>
-                <tr><td colspan="5" class="text-center py-4 text-muted">No treatments. Click "New Treatment" to add one.</td></tr>
+                <tr><td colspan="6" class="text-center py-4 text-muted">No treatments. Click "New Treatment" to add one.</td></tr>
                 <% } %>
                 <% treatments.forEach(t => {
                      const meds = careList(t.medicines_json);
@@ -82,44 +218,68 @@
                      const diet = careList(t.diet_json);
                 %>
                 <tr>
-                  <td><div class="fw-medium" style="font-size:13px;"><%=t.disease_name%></div><small class="text-muted"><%=t.category_name%></small></td>
+                  <td><div class="fw-medium" style="font-size: 15px;"><%=t.disease_name%></div><small class="text-muted"><%=t.category_name%></small></td>
                   <td><small><%=t.doctor_name%></small></td>
                   <td>
                     <% const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
                     <span class="status-badge <%=sc[t.status]||''%>"><%=t.status%></span>
                   </td>
-                  <td><small><%=t.start_date%> → <%=t.end_date||'Ongoing'%></small></td>
                   <td>
+                    <span class="status-badge badge <%= FINAL_CLASS[t.final_status] || 'bg-primary' %>" style="font-size: 12px;">
+                      <%= t.final_status || 'Active' %>
+                    </span>
+                    <% const dd = dischargeDocs(t.treatment_id); %>
+                    <% if (dd.length) { %>
+                      <% dd.forEach(a => { %>
+                      <a class="doc-chip doc-chip-sm mt-1" href="/attachments/<%= a.attachment_id %>" target="_blank" rel="noopener"
+                         title="<%= a.original_name %> · <%= kb(a.size_bytes) %>">
+                        <i class="bi <%= FILE_ICON(a.mime_type) %>"></i><span>Summary</span>
+                      </a>
+                      <% }) %>
+                    <% } %>
+                  </td>
+                  <td><small><%=t.start_date%> → <%=t.end_date||'Ongoing'%></small></td>
+                  <td class="text-nowrap">
                     <button class="btn btn-sm btn-outline-success me-1" onclick="openAddFollowup(<%=t.treatment_id%>,'<%=t.disease_name%>')" title="Add Follow-up"><i class="bi bi-calendar-plus"></i></button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="openEditTreatment(<%= JSON.stringify(t) %>)" title="Edit"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditTreatment(<%= JSON.stringify(t) %>)" title="Edit"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-dark" title="Final status &amp; discharge summary"
+                            onclick="openDischarge(<%= JSON.stringify({treatment_id:t.treatment_id, disease_name:t.disease_name, status:t.status, final_status:t.final_status, discharge_date:t.discharge_date, discharge_summary:t.discharge_summary, improvement_percentage:t.improvement_percentage}) %>)">
+                      <i class="bi bi-box-arrow-right"></i>
+                    </button>
                   </td>
                 </tr>
                 <!-- Medicines & suggestions given to the patient for this treatment -->
                 <tr class="treatment-care-row">
-                  <td colspan="5" style="background:#fbfaf6;border-top:0;">
+                  <td colspan="6" style="background:#fbfaf6;border-top:0;">
                     <div class="row g-3 px-1 py-1">
                       <div class="col-md-4">
-                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-capsule me-1 text-green"></i>Medicines</div>
+                        <div class="text-muted text-uppercase mb-1" style="font-size: 12px;letter-spacing:.5px;"><i class="bi bi-capsule me-1 text-green"></i>Medicines</div>
                         <% if (meds.length) { %>
                           <% meds.forEach(m => { %><span class="badge bg-light text-dark border me-1 mb-1" style="font-weight:500;"><%=m%></span><% }) %>
                         <% } else { %><small class="text-muted fst-italic">None recorded</small><% } %>
                       </div>
                       <div class="col-md-4">
-                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-person-walking me-1 text-green"></i>Lifestyle</div>
+                        <div class="text-muted text-uppercase mb-1" style="font-size: 12px;letter-spacing:.5px;"><i class="bi bi-person-walking me-1 text-green"></i>Lifestyle</div>
                         <% if (life.length) { %>
-                          <ul class="mb-0 ps-3" style="font-size:12px;"><% life.forEach(l => { %><li><%=l%></li><% }) %></ul>
+                          <ul class="mb-0 ps-3" style="font-size: 14px;"><% life.forEach(l => { %><li><%=l%></li><% }) %></ul>
                         <% } else { %><small class="text-muted fst-italic">None recorded</small><% } %>
                       </div>
                       <div class="col-md-4">
-                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-egg-fried me-1 text-green"></i>Diet</div>
+                        <div class="text-muted text-uppercase mb-1" style="font-size: 12px;letter-spacing:.5px;"><i class="bi bi-egg-fried me-1 text-green"></i>Diet</div>
                         <% if (diet.length) { %>
-                          <ul class="mb-0 ps-3" style="font-size:12px;"><% diet.forEach(d => { %><li><%=d%></li><% }) %></ul>
+                          <ul class="mb-0 ps-3" style="font-size: 14px;"><% diet.forEach(d => { %><li><%=d%></li><% }) %></ul>
                         <% } else { %><small class="text-muted fst-italic">None recorded</small><% } %>
                       </div>
                       <% if (t.current_notes) { %>
                       <div class="col-12">
-                        <div class="text-muted text-uppercase mb-1" style="font-size:10px;letter-spacing:.5px;"><i class="bi bi-journal-text me-1 text-green"></i>Notes</div>
+                        <div class="text-muted text-uppercase mb-1" style="font-size: 12px;letter-spacing:.5px;"><i class="bi bi-journal-text me-1 text-green"></i>Notes</div>
                         <small><%=t.current_notes%></small>
+                      </div>
+                      <% } %>
+                      <% if (t.discharge_summary) { %>
+                      <div class="col-12">
+                        <div class="text-muted text-uppercase mb-1" style="font-size: 12px;letter-spacing:.5px;"><i class="bi bi-box-arrow-right me-1 text-green"></i>Discharge summary<% if (t.discharge_date) { %> · <%=t.discharge_date%><% } %></div>
+                        <small><%=t.discharge_summary%></small>
                       </div>
                       <% } %>
                     </div>
@@ -133,7 +293,7 @@
 
         <!-- Drugs -->
         <div class="tab-pane fade" id="drugTab">
-          <div class="alert alert-light border py-2 mb-2" style="font-size:12px;">
+          <div class="alert alert-light border py-2 mb-2" style="font-size: 14px;">
             <i class="bi bi-info-circle me-1 text-green"></i>Medicines are recorded as part of each treatment plan. Add or edit them via the <strong>Treatments</strong> tab.
           </div>
           <div class="table-responsive">
@@ -145,7 +305,7 @@
                 <% } %>
                 <% drugAdministrations.forEach(d => { const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
                 <tr>
-                  <td><div class="fw-medium" style="font-size:13px;"><%=d.drug_name%></div></td>
+                  <td><div class="fw-medium" style="font-size: 15px;"><%=d.drug_name%></div></td>
                   <td><small class="text-muted"><%=d.category||'—'%></small></td>
                   <td><small><%=d.dosage||'—'%></small></td>
                   <td><small><%=d.frequency||'—'%></small></td>
@@ -169,10 +329,10 @@
               <div class="timeline-dot"><%=icons[e.event_type]||'•'%></div>
               <div class="timeline-card">
                 <div class="d-flex justify-content-between align-items-start">
-                  <span class="fw-semibold" style="font-size:13px;"><%=e.event_title%></span>
+                  <span class="fw-semibold" style="font-size: 15px;"><%=e.event_title%></span>
                   <small class="text-muted ms-2 text-nowrap"><%=new Date(e.event_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})%></small>
                 </div>
-                <% if (e.event_description) { %><p class="text-muted mb-0 mt-1" style="font-size:12px;"><%=e.event_description%></p><% } %>
+                <% if (e.event_description) { %><p class="text-muted mb-0 mt-1" style="font-size: 14px;"><%=e.event_description%></p><% } %>
               </div>
             </div>
             <% }) %>
@@ -184,7 +344,7 @@
         <div class="tab-pane fade" id="aiTab">
           <% if (!aiReports.length) { %>
           <div class="text-center py-5 text-muted">
-            <i class="bi bi-robot" style="font-size:48px;opacity:0.3;"></i>
+            <i class="bi bi-robot" style="font-size: 53px;opacity:0.3;"></i>
             <p class="mt-2">No AI reports yet. Use buttons above to generate.</p>
           </div>
           <% } %>
@@ -193,7 +353,7 @@
             <div class="card-body">
               <div class="d-flex align-items-center gap-2 mb-2">
                 <i class="bi bi-robot text-warning"></i>
-                <span class="fw-semibold" style="font-size:13px;"><%=r.report_title%></span>
+                <span class="fw-semibold" style="font-size: 15px;"><%=r.report_title%></span>
                 <span class="badge bg-warning text-dark ms-auto"><%=r.report_type%></span>
               </div>
               <small class="text-muted"><%=new Date(r.generated_at).toLocaleString('en-IN')%></small>
@@ -212,7 +372,7 @@
                ['Registration',patient.registration_date],['Address',patient.address||'—']].forEach(([l,v]) => { %>
             <div class="col-md-6">
               <div class="text-muted small"><%=l%></div>
-              <div class="fw-medium" style="font-size:14px;"><%=v%></div>
+              <div class="fw-medium" style="font-size: 16px;"><%=v%></div>
               <hr class="my-2"/>
             </div>
             <% }) %>
@@ -225,6 +385,254 @@
 </div>
 
 <!-- Add Treatment Modal -->
+<!-- ══ Initial query / consultation ══════════════════════════════════════ -->
+<div class="modal fade" id="addConsultationModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title">Initial query — consultation record</h5>
+          <small class="text-muted">What the patient presents with, and what was advised.</small>
+        </div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="/patients/<%= patient.patient_id %>/consultations" enctype="multipart/form-data" id="consultForm">
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <div class="col-md-4">
+              <label class="form-label">Visit type</label>
+              <select name="visit_type" class="form-select">
+                <option value="Initial" <%= consultations.length ? '' : 'selected' %>>Initial</option>
+                <option value="Follow-up" <%= consultations.length ? 'selected' : '' %>>Follow-up</option>
+                <option value="Review">Review</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Date</label>
+              <input type="date" name="consultation_date" class="form-control"
+                     value="<%= new Date().toISOString().split('T')[0] %>"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Doctor</label>
+              <select name="doctor_id" class="form-select">
+                <% doctors.forEach(d => { %>
+                <option value="<%= d.user_id %>" <%= d.user_id === user.userId ? 'selected' : '' %>><%= d.name %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- a. chief complaint -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">a. Chief complaint <span class="text-danger">*</span></label>
+              <textarea name="chief_complaint" class="form-control" rows="2" required
+                        placeholder="In the patient's own words — e.g. burning in the upper abdomen after meals, worse at night"></textarea>
+            </div>
+
+            <!-- b. diagnoses -->
+            <div class="col-md-7">
+              <label class="form-label fw-semibold">b. Diagnosis</label>
+              <textarea name="diagnosis" class="form-control" rows="2"
+                        placeholder="Provisional / differential diagnosis, dosha assessment"></textarea>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Linked condition</label>
+              <select name="disease_id" class="form-select">
+                <option value="">— none —</option>
+                <% diseases.forEach(d => { %>
+                <option value="<%= d.disease_id %>"><%= d.disease_name %> (<%= d.category_name %>)</option>
+                <% }) %>
+              </select>
+              <label class="form-label mt-2">Link to treatment</label>
+              <select name="treatment_id" class="form-select form-select-sm">
+                <option value="">— not linked —</option>
+                <% treatments.forEach(t => { %>
+                <option value="<%= t.treatment_id %>"><%= t.disease_name %> (from <%= t.start_date %>)</option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- c. report upload -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">c. Reports</label>
+              <div class="upload-box">
+                <input type="file" name="reports" id="consultFiles" class="form-control"
+                       accept="<%= ACCEPT %>" multiple/>
+                <small class="text-muted d-block mt-1">
+                  <i class="bi bi-paperclip me-1"></i>PDF, DOC/DOCX, JPEG or PNG · up to 4 files · 10 MB each
+                </small>
+                <input type="text" name="report_label" class="form-control form-control-sm mt-2"
+                       placeholder="Label for these reports (optional) — e.g. CBC + USG abdomen"/>
+              </div>
+            </div>
+
+            <!-- d. duration -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">d. Duration of complaint</label>
+              <div class="input-group">
+                <input type="number" name="duration_value" class="form-control" min="0" placeholder="e.g. 6"/>
+                <select name="duration_unit" class="form-select" style="max-width:110px;">
+                  <option value="days">days</option>
+                  <option value="weeks">weeks</option>
+                  <option value="months" selected>months</option>
+                  <option value="years">years</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- f. outcome -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">f. Outcome</label>
+              <select name="outcome" class="form-select">
+                <option value="Pending" selected>Pending</option>
+                <option value="Improved">Improved</option>
+                <option value="No Change">No Change</option>
+                <option value="Worsened">Worsened</option>
+                <option value="Cured">Cured</option>
+                <option value="Referred">Referred</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Outcome notes</label>
+              <input type="text" name="outcome_notes" class="form-control" placeholder="Optional"/>
+            </div>
+
+            <!-- e. drugs -->
+            <div class="col-12">
+              <label class="form-label fw-semibold mb-1">e. Drugs advised</label>
+              <div id="consultDrugRows">
+                <div class="row g-2 mb-2 consult-drug-row">
+                  <div class="col-5">
+                    <select name="drug_name" class="form-select form-select-sm">
+                      <option value="">Select medicine…</option>
+                      <% drugs.forEach(d => { %><option value="<%= d.name %>"><%= d.name %></option><% }) %>
+                    </select>
+                  </div>
+                  <div class="col-3"><input name="drug_dosage" class="form-control form-control-sm" placeholder="Dosage"/></div>
+                  <div class="col-3"><input name="drug_frequency" class="form-control form-control-sm" placeholder="Frequency"/></div>
+                  <div class="col-1"><button type="button" class="btn btn-sm btn-outline-danger w-100 rm-drug">&times;</button></div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="addConsultDrug">
+                <i class="bi bi-plus"></i> Add another
+              </button>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Examination notes</label>
+              <textarea name="examination_notes" class="form-control" rows="2"
+                        placeholder="Nadi, jihva, vitals, local examination"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2 me-1"></i>Save consultation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Update outcome ════════════════════════════════════════════════════ -->
+<div class="modal fade" id="outcomeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Update outcome</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form method="POST" id="outcomeForm" enctype="multipart/form-data">
+        <div class="modal-body row g-2">
+          <div class="col-12">
+            <label class="form-label">Outcome</label>
+            <select name="outcome" id="outcomeSelect" class="form-select">
+              <% ['Pending','Improved','No Change','Worsened','Cured','Referred'].forEach(o => { %>
+              <option value="<%= o %>"><%= o %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea name="outcome_notes" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Add a report</label>
+            <input type="file" name="reports" class="form-control" accept="<%= ACCEPT %>" multiple/>
+            <input type="text" name="report_label" class="form-control form-control-sm mt-2" placeholder="Label (optional)"/>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Final status & discharge summary ══════════════════════════════════ -->
+<div class="modal fade" id="dischargeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title">Final status &amp; discharge</h5>
+          <small class="text-muted" id="dischargeSubtitle"></small>
+        </div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="dischargeForm" enctype="multipart/form-data">
+        <div class="modal-body row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Final status</label>
+            <select name="final_status" id="finalStatus" class="form-select">
+              <% ['Active','Discharged','Referred','Lost to Follow-up','Deceased'].forEach(f => { %>
+              <option value="<%= f %>"><%= f %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Treatment status</label>
+            <select name="status" id="dischargeStatus" class="form-select">
+              <% ['Ongoing','Improved','Cured','Left Treatment'].forEach(st => { %>
+              <option value="<%= st %>"><%= st %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Discharge date</label>
+            <input type="date" name="discharge_date" id="dischargeDate" class="form-control"
+                   value="<%= new Date().toISOString().split('T')[0] %>"/>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">Improvement at discharge — <span id="impLabel">0</span>%</label>
+            <input type="range" name="improvement_percentage" id="dischargeImp"
+                   class="form-range" min="0" max="100" step="5" value="0"/>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">Discharge summary</label>
+            <textarea name="discharge_summary" id="dischargeSummary" class="form-control" rows="4"
+                      placeholder="Course of treatment, response, condition at discharge, advice on diet and lifestyle, follow-up plan."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Upload the signed discharge summary</label>
+            <div class="upload-box">
+              <input type="file" name="discharge_files" class="form-control" accept="<%= ACCEPT %>" multiple/>
+              <small class="text-muted d-block mt-1">
+                <i class="bi bi-paperclip me-1"></i>PDF, DOC/DOCX, JPEG or PNG · up to 2 files · 10 MB each
+              </small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2 me-1"></i>Save final status</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="addTreatmentModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -436,6 +844,76 @@ async function genDropoutRisk() {
     const riskColor = r.risk==='High'?'danger':r.risk==='Medium'?'warning':'success';
     content.innerHTML = `<div class="alert alert-${riskColor} mb-2"><strong>Dropout Risk: ${r.risk}</strong></div><div class="ai-report-body">${typeof marked!=='undefined'?marked.parse(r.report.report_text):r.report.report_text}</div>`;
   } catch(e){ content.innerHTML='<div class="text-danger">'+e.message+'</div>'; }
+}
+
+// ══ Consultations: drug rows, outcome + discharge modals ══════════════════
+(function () {
+  // Repeating "drugs advised" rows on the consultation form.
+  const rows = document.getElementById('consultDrugRows');
+  document.getElementById('addConsultDrug')?.addEventListener('click', () => {
+    const first = rows.querySelector('.consult-drug-row');
+    const clone = first.cloneNode(true);
+    clone.querySelectorAll('select, input').forEach(el => { el.value = ''; });
+    rows.appendChild(clone);
+  });
+  rows?.addEventListener('click', (e) => {
+    if (!e.target.closest('.rm-drug')) return;
+    const all = rows.querySelectorAll('.consult-drug-row');
+    if (all.length > 1) e.target.closest('.consult-drug-row').remove();
+    else all[0].querySelectorAll('select, input').forEach(el => { el.value = ''; });
+  });
+
+  // Guard against a submit that would be rejected server-side anyway.
+  const ACCEPT = ['pdf','doc','docx','jpg','jpeg','png'];
+  const MAX = 10 * 1024 * 1024;
+  document.addEventListener('change', (e) => {
+    if (e.target.type !== 'file') return;
+    for (const f of e.target.files) {
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (!ACCEPT.includes(ext)) {
+        alert(`“${f.name}” is not an accepted format. Use PDF, DOC/DOCX, JPEG or PNG.`);
+        e.target.value = ''; return;
+      }
+      if (f.size > MAX) {
+        alert(`“${f.name}” is larger than 10 MB.`);
+        e.target.value = ''; return;
+      }
+    }
+  });
+})();
+
+function openOutcome(consultationId, current) {
+  const form = document.getElementById('outcomeForm');
+  form.action = '/consultations/' + consultationId + '/outcome';
+  form.reset();
+  document.getElementById('outcomeSelect').value = current || 'Pending';
+  new bootstrap.Modal(document.getElementById('outcomeModal')).show();
+}
+
+function openDischarge(t) {
+  const form = document.getElementById('dischargeForm');
+  form.action = '/treatments/' + t.treatment_id + '/discharge';
+  form.reset();
+  document.getElementById('dischargeSubtitle').textContent = t.disease_name || '';
+  document.getElementById('finalStatus').value =
+    ['Active','Discharged','Referred','Lost to Follow-up','Deceased'].includes(t.final_status)
+      ? t.final_status : 'Discharged';
+  document.getElementById('dischargeStatus').value = t.status || 'Ongoing';
+  if (t.discharge_date) document.getElementById('dischargeDate').value = String(t.discharge_date).slice(0, 10);
+  document.getElementById('dischargeSummary').value = t.discharge_summary || '';
+  const imp = document.getElementById('dischargeImp');
+  imp.value = t.improvement_percentage || 0;
+  document.getElementById('impLabel').textContent = imp.value;
+  new bootstrap.Modal(document.getElementById('dischargeModal')).show();
+}
+
+document.getElementById('dischargeImp')?.addEventListener('input', (e) => {
+  document.getElementById('impLabel').textContent = e.target.value;
+});
+
+// Land on the consultations tab when redirected back with #consultations
+if (location.hash === '#consultations') {
+  document.querySelector('[href="#consultTab"]')?.click();
 }
 </script>
 <%- include('../partials/scripts') %>

@@ -29,18 +29,18 @@
               <a href="/drug-research/<%=d.drug_id%>" class="text-decoration-none">
                 <div class="drug-card">
                   <div class="d-flex justify-content-between mb-2">
-                    <span class="badge bg-light text-primary border" style="font-size:10px;"><%=d.category||'General'%></span>
+                    <span class="badge bg-light text-primary border" style="font-size: 12px;"><%=d.category||'General'%></span>
                     <% if (eff) { %><span class="badge" style="background:<%=col%>;color:#fff;"><%=eff%>% cured</span><% } %>
                   </div>
                   <div class="fw-semibold mb-1" style="font-family:'Playfair Display',serif;color:#2d5c3e;"><%=d.name%></div>
-                  <div class="text-muted mb-2" style="font-size:11px;min-height:28px;"><%=(d.traditional_use||'').slice(0,65)%><%=(d.traditional_use||'').length>65?'…':''%></div>
+                  <div class="text-muted mb-2" style="font-size: 13px;min-height:28px;"><%=(d.traditional_use||'').slice(0,65)%><%=(d.traditional_use||'').length>65?'…':''%></div>
                   <div class="row g-1 mb-2">
-                    <div class="col-6 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:3px 0;"><div style="font-size:14px;font-weight:700;color:#2d5c3e;"><%=d.times_prescribed||0%></div><div style="font-size:10px;color:#888;">Prescribed</div></div></div>
-                    <div class="col-6 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:3px 0;"><div style="font-size:14px;font-weight:700;color:#2d5c3e;"><%=d.treatments_used||0%></div><div style="font-size:10px;color:#888;">Patients</div></div></div>
+                    <div class="col-6 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:3px 0;"><div style="font-size: 16px;font-weight:700;color:#2d5c3e;"><%=d.times_prescribed||0%></div><div style="font-size: 12px;color:#888;">Prescribed</div></div></div>
+                    <div class="col-6 text-center"><div style="background:#f0f7f3;border-radius:6px;padding:3px 0;"><div style="font-size: 16px;font-weight:700;color:#2d5c3e;"><%=d.treatments_used||0%></div><div style="font-size: 12px;color:#888;">Patients</div></div></div>
                   </div>
                   <% if (eff) { %>
                   <div class="efficacy-bar"><div class="efficacy-fill" style="width:<%=eff%>%;background:<%=col%>;"></div></div>
-                  <small class="text-muted" style="font-size:10px;">Cure rate <%=eff%>%</small>
+                  <small class="text-muted" style="font-size: 12px;">Cure rate <%=eff%>%</small>
                   <% } %>
                 </div>
               </a>
@@ -65,7 +65,7 @@ document.getElementById('analyticsTabBtn').addEventListener('click', async funct
     el.innerHTML = `
     <div class="row g-2 mb-3">
       ${[['Total Drugs',overall.total_drugs,'#4a7c59'],['Prescriptions',overall.total_prescriptions,'#2980b9'],['Outcomes Recorded',overall.outcomes_recorded,'#27ae60'],['Avg Efficacy',(overall.overall_avg_efficacy||'—')+'%','#c9a84c']].map(([l,v,c])=>`
-      <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body py-2"><div style="font-size:22px;font-weight:700;color:${c};font-family:'Playfair Display',serif;">${v}</div><div class="text-muted" style="font-size:12px;">${l}</div></div></div></div>`).join('')}
+      <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body py-2"><div style="font-size: 25px;font-weight:700;color:${c};font-family:'Playfair Display',serif;">${v}</div><div class="text-muted" style="font-size: 14px;">${l}</div></div></div></div>`).join('')}
     </div>
     <div class="row g-3 mb-3">
       <div class="col-md-6"><div class="card"><div class="card-header fw-semibold">Top Drugs by Efficacy</div><div class="card-body" style="height:220px;"><canvas id="effChart"></canvas></div></div></div>
@@ -74,7 +74,7 @@ document.getElementById('analyticsTabBtn').addEventListener('click', async funct
     <div class="card"><div class="card-header fw-semibold">Drug-Disease Efficacy Matrix</div>
     <div class="table-responsive"><table class="table table-sm align-middle mb-0">
       <thead><tr><th>Drug</th><th>Disease</th><th>Cases</th><th>Efficacy</th><th>Cured</th></tr></thead>
-      <tbody>${(drugDisease||[]).map(r=>`<tr><td><b style="font-size:12px;">${r.drug_name}</b></td><td><small>${r.disease_name}</small></td><td><small>${r.prescriptions}</small></td><td>${r.avg_efficacy?`<span style="font-size:12px;font-weight:600;color:${r.avg_efficacy>=75?'#27ae60':r.avg_efficacy>=50?'#f39c12':'#e74c3c'}">${r.avg_efficacy}%</span>`:'—'}</td><td><small style="color:#27ae60;font-weight:600;">${r.cured_cases}</small></td></tr>`).join('')}</tbody>
+      <tbody>${(drugDisease||[]).map(r=>`<tr><td><b style="font-size: 14px;">${r.drug_name}</b></td><td><small>${r.disease_name}</small></td><td><small>${r.prescriptions}</small></td><td>${r.avg_efficacy?`<span style="font-size: 14px;font-weight:600;color:${r.avg_efficacy>=75?'#27ae60':r.avg_efficacy>=50?'#f39c12':'#e74c3c'}">${r.avg_efficacy}%</span>`:'—'}</td><td><small style="color:#27ae60;font-weight:600;">${r.cured_cases}</small></td></tr>`).join('')}</tbody>
     </table></div></div>`;
     el.dataset.loaded = '1';
     if (topEfficacy.length) new Chart(document.getElementById('effChart'),{type:'bar',data:{labels:topEfficacy.map(x=>x.name),datasets:[{label:'Avg Efficacy %',data:topEfficacy.map(x=>x.avg_efficacy),backgroundColor:topEfficacy.map(x=>x.avg_efficacy>=75?'#27ae60':x.avg_efficacy>=50?'#f39c12':'#e74c3c'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});

@@ -149,7 +149,7 @@ const getMyPatientStats = async (req,res) => {
 
     const [recentPatients] = await db.query(`
       SELECT p.patient_id, p.patient_code, p.name, p.age, p.gender,
-        t.status, t.improvement_percentage, d.disease_name, t.start_date
+        t.treatment_id, t.status, t.improvement_percentage, d.disease_name, t.start_date
       FROM Treatments t
       JOIN Patients p ON t.patient_id=p.patient_id
       JOIN Diseases d ON t.disease_id=d.disease_id

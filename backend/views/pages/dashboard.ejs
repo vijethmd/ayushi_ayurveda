@@ -80,8 +80,8 @@
               <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom">
                 <div class="pat-avatar" style="background:#e8f5e9;color:#4a7c59;"><%=d.name.charAt(0)%></div>
                 <div class="flex-grow-1 min-w-0">
-                  <div class="fw-semibold text-truncate" style="font-size:13px;"><%=d.name%></div>
-                  <div class="text-muted" style="font-size:11px;"><%=d.specialization||''%></div>
+                  <div class="fw-semibold text-truncate" style="font-size: 15px;"><%=d.name%></div>
+                  <div class="text-muted" style="font-size: 13px;"><%=d.specialization||''%></div>
                 </div>
                 <span class="badge" style="background:#e8f5e9;color:#2e7d32;"><%=d.cure_rate||0%>%</span>
               </div>
@@ -98,15 +98,15 @@
           <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
               <span class="fw-semibold">Upcoming Follow-Ups</span>
-              <a href="/followups" class="btn btn-sm btn-outline-primary" style="font-size:11px;">View All</a>
+              <a href="/followups" class="btn btn-sm btn-outline-primary" style="font-size: 13px;">View All</a>
             </div>
             <div class="card-body p-0" style="max-height:260px;overflow-y:auto;">
               <% (data.upcomingFollowups||[]).slice(0,6).forEach(f => { %>
               <div class="d-flex gap-2 px-3 py-2 border-bottom align-items-start">
-                <div class="pat-avatar" style="background:#e3f2fd;color:#1565c0;font-size:14px;"><i class="bi bi-calendar-check"></i></div>
+                <div class="pat-avatar" style="background:#e3f2fd;color:#1565c0;font-size: 16px;"><i class="bi bi-calendar-check"></i></div>
                 <div>
-                  <div style="font-size:13px;font-weight:500;"><%=f.patient_name%></div>
-                  <div class="text-muted" style="font-size:11px;"><%=f.disease_name%> &middot; <%=f.followup_date%></div>
+                  <div style="font-size: 15px;font-weight:500;"><%=f.patient_name%></div>
+                  <div class="text-muted" style="font-size: 13px;"><%=f.disease_name%> &middot; <%=f.followup_date%></div>
                 </div>
               </div>
               <% }) %>
@@ -129,8 +129,8 @@
                   e.event_type==='followup'?'#c9a84c':e.event_type==='treatment_completed'?'#27ae60':'#95a5a6'
                 %>;"></div>
                 <div>
-                  <div style="font-size:13px;font-weight:500;"><%=e.event_title%></div>
-                  <div class="text-muted" style="font-size:11px;"><%=e.patient_name%> &middot; <%=new Date(e.event_date).toLocaleDateString('en-IN')%></div>
+                  <div style="font-size: 15px;font-weight:500;"><%=e.event_title%></div>
+                  <div class="text-muted" style="font-size: 13px;"><%=e.patient_name%> &middot; <%=new Date(e.event_date).toLocaleDateString('en-IN')%></div>
                 </div>
               </div>
               <% }) %>

@@ -1,0 +1,121 @@
+<%- include('../partials/head', { title: title }) %>
+<% const money = (n) => n == null ? '—' : '₹' + Number(n).toLocaleString('en-IN'); %>
+<div class="pub-page pub-page-results">
+  <%- include('../partials/public-header', { facets, loggedIn, active:{type:'',by:'',q:''}, navActive:'materia' }) %>
+
+  <section class="pub-results">
+    <div class="pub-wrap">
+      <p class="pub-crumb">
+        <a href="/">Home</a> <i class="bi bi-chevron-right"></i>
+        <a href="/materia-medica">Materia Medica</a> <i class="bi bi-chevron-right"></i>
+        <% if (drug.source_type) { %>
+        <a href="/materia-medica?q=<%= encodeURIComponent(drug.source_type) %>"><%= drug.source_type %></a>
+        <i class="bi bi-chevron-right"></i>
+        <% } %>
+        <a href="/materia-medica?group=category&q=<%= encodeURIComponent(drug.category || '') %>"><%= drug.category %></a>
+      </p>
+
+      <div class="dd-head">
+        <div>
+          <h1 class="pub-page-title"><i class="bi bi-droplet-half"></i> <%= drug.generic_name || drug.name %></h1>
+          <% if (drug.botanical_name) { %><p class="dd-botanical"><%= drug.botanical_name %></p><% } %>
+          <div class="pub-tag-row">
+            <% if (drug.category) { %><span class="pub-badge"><%= drug.category %></span><% } %>
+            <% if (drug.preparation_class) { %><span class="pub-badge pub-badge-soft"><%= drug.preparation_class %></span><% } %>
+            <% if (drug.dosage_form) { %><span class="pub-badge pub-badge-soft"><i class="bi bi-capsule"></i><%= drug.dosage_form %></span><% } %>
+          </div>
+        </div>
+        <div class="dd-lineage">
+          <span>Derivation</span>
+          <strong><%= drug.source_type || '—' %></strong>
+          <em><%= drug.source_subtype || '' %></em>
+        </div>
+      </div>
+
+      <% if (drug.traditional_use || drug.description) { %>
+      <p class="dd-lede"><%= drug.traditional_use || drug.description %></p>
+      <% } %>
+
+      <!-- Rasapanchaka -->
+      <h2 class="edu-h2"><i class="bi bi-hexagon"></i> Rasapanchaka — classical pharmacology</h2>
+      <div class="dd-props">
+        <% [
+          ['Rasa (taste)',        drug.rasa,        'bi-droplet'],
+          ['Guna (quality)',      drug.guna,        'bi-layers'],
+          ['Virya (potency)',     drug.virya,       'bi-thermometer-half'],
+          ['Vipaka (post-digestive)', drug.vipaka,  'bi-arrow-repeat'],
+          ['Doshaghnata',         drug.dosha_effect,'bi-diagram-2'],
+          ['Part used',           drug.part_used,   'bi-flower1'],
+        ].forEach(([label, value, icon]) => { %>
+        <div class="dd-prop">
+          <span class="dd-prop-label"><i class="bi <%= icon %>"></i><%= label %></span>
+          <strong><%= value || '—' %></strong>
+        </div>
+        <% }) %>
+      </div>
+
+      <!-- Clinical use -->
+      <div class="dd-clinical">
+        <% [
+          ['Dosage',            drug.dosage,              'bi-prescription2'],
+          ['Anupana (vehicle)', drug.anupana,             'bi-cup-hot'],
+          ['Classical source',  drug.classical_reference, 'bi-book'],
+        ].forEach(([label, value, icon]) => { %>
+        <div class="dd-clin">
+          <h4><i class="bi <%= icon %>"></i><%= label %></h4>
+          <p><%= value || 'Not recorded' %></p>
+        </div>
+        <% }) %>
+      </div>
+
+      <% if (drug.contraindications) { %>
+      <div class="dd-warn">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>
+          <strong>Cautions &amp; contraindications</strong>
+          <p><%= drug.contraindications %></p>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Brands -->
+      <h2 class="edu-h2"><i class="bi bi-tag"></i> Available brands
+        <span class="edu-h2-count"><%= brands.length %></span>
+      </h2>
+      <% if (!brands.length) { %>
+        <p class="dd-none">No brands catalogued for this formulation yet.</p>
+      <% } else { %>
+      <div class="pub-table-wrap">
+        <table class="pub-table">
+          <thead><tr><th>Brand</th><th>Manufacturer</th><th>Form</th><th>Pack</th><th class="text-end">MRP</th></tr></thead>
+          <tbody>
+            <% brands.forEach(b => { %>
+            <tr>
+              <td><strong><%= b.brand_name %></strong></td>
+              <td><a class="pub-link" href="/search?type=medicines&by=manufacturer&q=<%= encodeURIComponent(b.manufacturer) %>"><%= b.manufacturer %></a></td>
+              <td><%= b.dosage_form || '—' %></td>
+              <td><%= b.pack_size || '—' %></td>
+              <td class="text-end"><%= money(b.mrp) %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+
+      <% if (siblings.length) { %>
+      <h2 class="edu-h2"><i class="bi bi-diagram-3"></i> Others in <%= drug.category %></h2>
+      <div class="pub-chips">
+        <% siblings.forEach(sfn => { %>
+        <a class="pub-chip" href="/materia-medica/<%= sfn.drug_id %>"><span><%= sfn.generic_name || sfn.name %></span></a>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+  </section>
+
+  <%- include('../partials/public-footer', { references }) %>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

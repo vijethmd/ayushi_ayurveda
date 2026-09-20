@@ -19,7 +19,7 @@
                 <tbody>
                   <% list.forEach(f=>{ %>
                   <tr>
-                    <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=f.patient_name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=f.patient_name%></div><small class="text-muted monospace"><%=f.patient_code%></small></div></div></td>
+                    <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=f.patient_name.charAt(0)%></div><div><div style="font-size: 15px;font-weight:500;"><%=f.patient_name%></div><small class="text-muted monospace"><%=f.patient_code%></small></div></div></td>
                     <td><small><%=f.disease_name%></small></td>
                     <td><small><%=f.doctor_name%></small></td>
                     <td><span class="badge <%=type==='missed'?'bg-danger':'bg-primary'%>"><%=f.followup_date%></span></td>

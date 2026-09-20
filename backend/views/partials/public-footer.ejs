@@ -1,0 +1,36 @@
+<footer class="pub-footer">
+  <div class="pub-wrap">
+
+    <div class="pub-foot-grid">
+      <div class="pub-foot-brand">
+        <div class="pub-brand-name" style="font-size: 25px;">AYUSHI</div>
+        <p class="pub-foot-tag">आयुष्मान् भव — may you live long and well.</p>
+        <p>BMSCE Final Year Project · CSE 2023–27</p>
+        <div class="pub-foot-inline">
+          <a href="/">Home</a>
+          <a href="/materia-medica">Materia Medica</a>
+          <a href="/manufacturers">Manufacturers</a>
+          <a href="/education">Education</a>
+          <a href="/login">Clinician sign in</a>
+        </div>
+      </div>
+
+      <% references.forEach(group => { %>
+      <div class="pub-foot-col">
+        <h4><%= group.group %></h4>
+        <ul>
+          <% group.links.forEach(l => { %>
+          <li>
+            <a href="<%= l.url %>" target="_blank" rel="noopener noreferrer">
+              <span><%= l.label %></span>
+              <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+      </div>
+      <% }) %>
+    </div>
+
+  </div>
+</footer>

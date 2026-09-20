@@ -1,0 +1,266 @@
+<%- include('../partials/head', { title: 'Ayushman Bhava' }) %>
+
+<div class="pub-page">
+  <%- include('../partials/public-header', { facets, loggedIn, active: { type:'', by:'', q:'' } }) %>
+
+  <!-- ── Hero ──────────────────────────────────────────────────────────── -->
+  <section class="pub-hero">
+    <% [340,560,780,1020,1280].forEach((s,i) => { %>
+    <div class="pub-ring" style="width:<%=s%>px;height:<%=s%>px;border-color:rgba(201,168,76,<%=(0.10-i*0.017).toFixed(3)%>);"></div>
+    <% }) %>
+
+    <div class="pub-hero-inner">
+      <!-- Alternates Devanagari ⇄ Latin every 5 seconds -->
+      <h1 class="pub-title" id="heroTitle" aria-label="Ayushman Bhava">
+        <span class="pub-title-face is-on" lang="hi" data-face="hi">आयुष्मान् भव</span>
+        <span class="pub-title-face"      lang="en" data-face="en">AYUSHMAN BHAVA</span>
+      </h1>
+
+      <p class="pub-tagline">“May you be blessed with a long and healthy life.”</p>
+
+      <!-- ── The shloka — click to hear it recited ──────────────────────── -->
+      <div class="shloka" id="shloka" role="button" tabindex="0"
+           aria-label="Recite the shloka: <%= shloka.title %>">
+        <div class="shloka-lines">
+          <% shloka.padas.forEach((p, i) => { %>
+          <span class="shloka-pada" data-i="<%= i %>">
+            <span class="shloka-sa" lang="sa"><%= p.sa %></span>
+            <span class="shloka-it" aria-hidden="true"><%= p.it %></span>
+          </span>
+          <% }) %>
+        </div>
+        <div class="shloka-bar">
+          <span class="shloka-play" id="shlokaPlay">
+            <i class="bi bi-play-fill"></i><span id="shlokaPlayLabel">Recite</span>
+          </span>
+          <cite><%= shloka.source %> · <%= shloka.sourceEn %></cite>
+        </div>
+        <p class="shloka-meaning"><%= shloka.meaning %></p>
+        <p class="shloka-note" id="shlokaNote" hidden></p>
+      </div>
+
+      <p class="pub-sub">Ayurvedic practitioners and classical medicines across India.</p>
+
+      <div class="pub-hero-cta">
+        <button type="button" class="pub-cta pub-cta-gold" id="heroSearchBtn">
+          <i class="bi bi-search"></i> Start a search
+        </button>
+        <a href="/login" class="pub-cta pub-cta-outline">
+          <i class="bi bi-box-arrow-in-right"></i> Clinician sign in
+        </a>
+      </div>
+
+      <div class="pub-stats">
+        <% [
+          [stats.doctors,       'Doctors',       'bi-person-badge'],
+          [stats.cities,        'Cities',        'bi-geo-alt'],
+          [stats.generics,      'Formulations',  'bi-droplet-half'],
+          [stats.brands,        'Brands',        'bi-tag'],
+          [stats.manufacturers, 'Manufacturers', 'bi-building'],
+          [stats.diseases,      'Conditions',    'bi-clipboard2-pulse'],
+        ].forEach(([n,label,icon]) => { %>
+        <div class="pub-stat">
+          <i class="bi <%= icon %>"></i>
+          <strong><%= n %></strong>
+          <span><%= label %></span>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. What Ayurveda is ───────────────────────────────────────────── -->
+  <section class="ayu-about">
+    <div class="pub-wrap">
+      <div class="ayu-about-head">
+        <p class="ayu-eyebrow">आयुर्वेद</p>
+        <h2 class="pub-section-title">The knowledge of life</h2>
+        <p class="ayu-etym"><%= ayurveda.etymology %></p>
+      </div>
+
+      <div class="ayu-about-grid">
+        <div class="ayu-lede">
+          <p><%= ayurveda.lede %></p>
+          <blockquote class="ayu-quote"><%= ayurveda.aim %></blockquote>
+        </div>
+        <div class="ayu-doshas">
+          <h3>The three doshas</h3>
+          <% ayurveda.doshas.forEach(d => { %>
+          <div class="ayu-dosha">
+            <span class="ayu-dosha-sa" lang="sa"><%= d.sa %></span>
+            <div>
+              <strong><%= d.en %></strong> <em><%= d.elem %></em>
+              <p><%= d.governs %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <h3 class="ayu-sub">Ashtanga Ayurveda — the eight branches</h3>
+      <div class="ayu-branches">
+        <% ayurveda.branches.forEach(([en, sa, what]) => { %>
+        <div class="ayu-branch">
+          <span lang="sa"><%= sa %></span>
+          <strong><%= en %></strong>
+          <p><%= what %></p>
+        </div>
+        <% }) %>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 3. The Maharshis ──────────────────────────────────────────────── -->
+  <section class="mh-section">
+    <div class="pub-wrap">
+      <div class="ayu-about-head">
+        <p class="ayu-eyebrow">महर्षि परम्परा</p>
+        <h2 class="pub-section-title">The Maharshis of Ayurveda</h2>
+
+      </div>
+
+      <div class="mh-grid">
+        <% maharshis.forEach(m => { %>
+        <article class="mh-card">
+          <div class="mh-card-head">
+            <% if (m.photo) { %>
+            <a class="mh-photo" href="<%= m.photo.source %>" target="_blank" rel="noopener noreferrer"
+               title="<%= m.name %> — <%= m.photo.author %>, <%= m.photo.licence %>">
+              <img src="/img/maharshis/<%= m.photo.file %>" alt="<%= m.name %>" loading="lazy" width="84" height="84"/>
+            </a>
+            <% } else { %>
+            <%- portrait(m, 84) %>
+            <% } %>
+            <div>
+              <h3><%= m.name %></h3>
+              <p class="mh-sa" lang="sa"><%= m.sa %></p>
+              <p class="mh-title"><%= m.title %> · <%= m.era %></p>
+            </div>
+          </div>
+          <p class="mh-text"><%= m.text %></p>
+        </article>
+        <% }) %>
+      </div>
+
+      <p class="mh-credits">
+        <% maharshis.filter(m => m.photo).forEach((m, i) => { %><%= i ? ' · ' : '' %><a href="<%= m.photo.source %>" target="_blank" rel="noopener noreferrer"><%= m.name %></a> <%= m.photo.author %>, <%= m.photo.licence %><% }) %>
+      </p>    </div>
+  </section>
+
+
+  <%- include('../partials/public-footer', { references }) %>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Hero title: swap Devanagari ⇄ Latin every 5 seconds ──────────────────────
+(function () {
+  const faces = document.querySelectorAll('#heroTitle .pub-title-face');
+  if (faces.length < 2) return;
+  let i = 0;
+  const swap = () => {
+    faces[i].classList.remove('is-on');
+    i = (i + 1) % faces.length;
+    faces[i].classList.add('is-on');
+  };
+  let timer = setInterval(swap, 5000);
+  // Pause while the tab is hidden so the two faces never desync
+  document.addEventListener('visibilitychange', () => {
+    clearInterval(timer);
+    if (!document.hidden) timer = setInterval(swap, 5000);
+  });
+})();
+
+// ── Shloka recitation ───────────────────────────────────────────────────────
+// Uses the browser's own speech synthesis — there is no audio file to ship and
+// nothing to license. A Devanagari-capable voice (hi-IN / sa-IN) reads the
+// Sanskrit; where the device has none we fall back to the IAST transliteration
+// and say so, rather than reading the Devanagari with a voice that cannot.
+(function () {
+  const root   = document.getElementById('shloka');
+  const btn    = document.getElementById('shlokaPlay');
+  const label  = document.getElementById('shlokaPlayLabel');
+  const note   = document.getElementById('shlokaNote');
+  const padas  = [...root.querySelectorAll('.shloka-pada')];
+  const synth  = window.speechSynthesis;
+
+  if (!synth) {
+    note.hidden = false;
+    note.textContent = 'This browser cannot recite the verse — speech synthesis is unavailable.';
+    root.classList.add('is-mute');
+    return;
+  }
+
+  // Prefer a Devanagari voice; fall back to any Indian-English voice.
+  const pickVoice = () => {
+    const v = synth.getVoices();
+    return v.find(x => /^(sa|hi)([-_]|$)/i.test(x.lang))
+        || v.find(x => /^en[-_]IN/i.test(x.lang))
+        || v.find(x => /^en/i.test(x.lang)) || null;
+  };
+  let voice = pickVoice();
+  synth.addEventListener?.('voiceschanged', () => { voice = voice || pickVoice(); });
+
+  let playing = false;
+  const setIdle = () => {
+    playing = false;
+    root.classList.remove('is-playing');
+    padas.forEach(p => p.classList.remove('on'));
+    btn.innerHTML = '<i class="bi bi-play-fill"></i><span id="shlokaPlayLabel">Recite</span>';
+  };
+  const stop = () => { synth.cancel(); setIdle(); };
+
+  function recite() {
+    if (playing) return stop();
+    synth.cancel();
+    voice = voice || pickVoice();
+
+    const devanagari = voice && /^(sa|hi)([-_]|$)/i.test(voice.lang);
+    note.hidden = false;
+    note.textContent = devanagari
+      ? 'Recited by your device’s Hindi voice — cadence is approximate, not a trained chant.'
+      : 'No Devanagari voice on this device, so the transliteration is read instead.';
+
+    playing = true;
+    root.classList.add('is-playing');
+    btn.innerHTML = '<i class="bi bi-stop-fill"></i><span id="shlokaPlayLabel">Stop</span>';
+
+    padas.forEach((pada, i) => {
+      const text = pada.querySelector(devanagari ? '.shloka-sa' : '.shloka-it').textContent.trim();
+      const u = new SpeechSynthesisUtterance(text);
+      if (voice) { u.voice = voice; u.lang = voice.lang; }
+      u.rate  = 0.62;   // slow, so the padas land like a recitation
+      u.pitch = 0.9;
+      u.onstart = () => {
+        padas.forEach(x => x.classList.remove('on'));
+        pada.classList.add('on');
+      };
+      if (i === padas.length - 1) u.onend = setIdle;
+      u.onerror = setIdle;
+      synth.speak(u);
+      // A breath between padas.
+      if (i < padas.length - 1) {
+        const pause = new SpeechSynthesisUtterance(' ');
+        pause.rate = 0.5; pause.volume = 0;
+        if (voice) pause.voice = voice;
+        synth.speak(pause);
+      }
+    });
+  }
+
+  root.addEventListener('click', recite);
+  root.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); recite(); }
+  });
+  window.addEventListener('beforeunload', () => synth.cancel());
+})();
+
+// Hero CTA opens the header's search dropdown
+document.getElementById('heroSearchBtn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('searchToggle')?.click();
+});
+</script>
+</body>
+</html>

@@ -66,9 +66,17 @@ const getUnread = async (userId) => {
 // WEB ROUTES (EJS pages)
 // ════════════════════════════════════════════════════════════════════════════════
 
-// ── Auth pages ─────────────────────────────────────────────────────────────────
-app.get('/', (req, res) => res.redirect('/login'));
+// ── Public pages (no login required) ───────────────────────────────────────────
+const publicCtrl = require('./controllers/publicController');
+app.get('/', publicCtrl.landing);
+app.get('/search', publicCtrl.search);
+app.get('/manufacturers', publicCtrl.manufacturers);
+app.get('/education', publicCtrl.education);
+app.get('/materia-medica', publicCtrl.materiaMedica);
+app.get('/materia-medica/:id', publicCtrl.materiaMedicaDetail);
+app.get('/api/public/suggest', publicCtrl.suggest);
 
+// ── Auth pages ─────────────────────────────────────────────────────────────────
 app.get('/login', (req, res) => {
   const token = req.cookies?.ayushi_token;
   if (token) { try { jwt.verify(token, JWT_SECRET); return res.redirect('/dashboard'); } catch {} }
@@ -229,12 +237,36 @@ app.get('/patients/:id', requireLogin, async (req, res) => {
       }
     }
     const [diseases] = await db.query('SELECT * FROM Diseases WHERE is_active=1 ORDER BY category_name,disease_name');
-    const [doctors] = await db.query('SELECT user_id,name,specialization FROM Users WHERE role="doctor" AND is_active=1 ORDER BY name');
+    const [doctors] = await db.query("SELECT user_id,name,specialization FROM Users WHERE role='doctor' AND is_active=1 ORDER BY name");
     const [drugs] = await db.query('SELECT drug_id,name,category FROM Drugs WHERE is_active=1 ORDER BY name');
+    // Consultations (the initial query / chief-complaint record) + their reports
+    const [consultations] = await db.query(
+      `SELECT c.*, d.disease_name, u.name AS doctor_name
+         FROM Consultations c
+         LEFT JOIN Diseases d ON d.disease_id = c.disease_id
+         LEFT JOIN Users u    ON u.user_id    = c.doctor_id
+        WHERE c.patient_id = ?
+        ORDER BY c.consultation_date DESC, c.consultation_id DESC`, [id]);
+    const [attachments] = await db.query(
+      `SELECT a.*, u.name AS uploaded_by_name
+         FROM Attachments a LEFT JOIN Users u ON u.user_id = a.uploaded_by
+        WHERE a.patient_id = ? ORDER BY a.uploaded_at DESC`, [id]);
     const unreadCount = await getUnread(req.user.userId);
-    res.render('pages/patient-detail', { patient:pts[0], treatments, timeline, aiReports, drugAdministrations, diseases, doctors, drugs, unreadCount, title:pts[0].name });
+    res.render('pages/patient-detail', { patient:pts[0], treatments, timeline, aiReports, drugAdministrations, diseases, doctors, drugs, consultations, attachments, unreadCount, title:pts[0].name, flashOk:req.query.ok||null, flashErr:req.query.err||null });
   } catch (err) { console.error(err); res.redirect('/patients'); }
 });
+
+// ── Consultations (initial query / chief complaint) & discharge ───────────────
+const consultCtrl = require('./controllers/consultationController');
+const { upload, handle } = require('./middleware/upload');
+const reportUpload    = handle(upload.array('reports', 4));
+const dischargeUpload = handle(upload.array('discharge_files', 2));
+
+app.post('/patients/:id/consultations',   requireLogin, reportUpload,    consultCtrl.create);
+app.post('/consultations/:id/outcome',    requireLogin, reportUpload,    consultCtrl.updateOutcome);
+app.post('/treatments/:id/discharge',     requireLogin, dischargeUpload, consultCtrl.discharge);
+app.get('/attachments/:id',               requireLogin, consultCtrl.download);
+app.post('/attachments/:id/delete',       requireLogin, consultCtrl.remove);
 
 // ── Treatments ─────────────────────────────────────────────────────────────────
 app.get('/treatments', requireLogin, async (req, res) => {
@@ -275,7 +307,7 @@ app.get('/doctors', requireLogin, requireAdmin, async (req, res) => {
 app.get('/doctor-requests', requireLogin, requireAdmin, async (req, res) => {
   try {
     const { isEmailConfigured } = require('./utils/mailer');
-    const [requests] = await db.query('SELECT r.*, u.name as reviewer_name FROM Doctor_Requests r LEFT JOIN Users u ON r.reviewed_by=u.user_id ORDER BY (r.status="pending") DESC, r.created_at DESC');
+    const [requests] = await db.query("SELECT r.*, u.name as reviewer_name FROM Doctor_Requests r LEFT JOIN Users u ON r.reviewed_by=u.user_id ORDER BY (r.status='pending') DESC, r.created_at DESC");
     const unreadCount = await getUnread(req.user.userId);
     res.render('pages/doctor-requests', {
       requests,
@@ -495,7 +527,7 @@ app.get('/analytics', requireLogin, async (req, res) => {
 app.get('/ai-insights', requireLogin, async (req, res) => {
   try {
     const [reports] = await db.query(`SELECT r.*,u.name as generated_by_name FROM AI_Reports r LEFT JOIN Users u ON r.generated_by=u.user_id WHERE r.patient_id IS NULL ORDER BY r.generated_at DESC LIMIT 30`);
-    const [doctors] = await db.query('SELECT user_id,name,specialization FROM Users WHERE role="doctor" AND is_active=1 ORDER BY name');
+    const [doctors] = await db.query("SELECT user_id,name,specialization FROM Users WHERE role='doctor' AND is_active=1 ORDER BY name");
     const unreadCount = await getUnread(req.user.userId);
     res.render('pages/ai-insights', { reports, doctors, unreadCount, title:'AI Insights' });
   } catch(err) { console.error(err); res.render('pages/ai-insights', { reports:[], doctors:[], unreadCount:0, title:'AI Insights' }); }

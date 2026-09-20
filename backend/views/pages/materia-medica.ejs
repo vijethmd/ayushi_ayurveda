@@ -1,0 +1,98 @@
+<%- include('../partials/head', { title: title }) %>
+<div class="pub-page pub-page-results">
+  <%- include('../partials/public-header', { facets, loggedIn, active:{type:'',by:'',q:''}, navActive:'materia' }) %>
+
+  <section class="pub-results">
+    <div class="pub-wrap">
+      <p class="pub-crumb"><a href="/">Home</a> <i class="bi bi-chevron-right"></i> Materia Medica</p>
+      <h1 class="pub-page-title"><i class="bi bi-diagram-3"></i> Materia Medica</h1>
+      <p class="pub-page-lede">
+        Arranged by <strong>derivation</strong> and then <strong>category</strong>.
+        Open any entry for its full profile.
+      </p>
+
+      <div class="mm-controls">
+        <form class="pub-refine" action="/materia-medica" method="GET">
+          <input type="hidden" name="group" value="<%= groupBy %>"/>
+          <div class="pub-input-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" class="pub-input" value="<%= q %>"
+                   placeholder="Drug, botanical name, category or derivation" autocomplete="off"/>
+            <button type="submit" class="pub-go"><i class="bi bi-arrow-right-short"></i></button>
+          </div>
+        </form>
+        <div class="mm-toggle">
+          <span>Group by</span>
+          <a class="<%= groupBy === 'source' ? 'on' : '' %>"
+             href="/materia-medica?group=source&q=<%= encodeURIComponent(q) %>">Derivation</a>
+          <a class="<%= groupBy === 'category' ? 'on' : '' %>"
+             href="/materia-medica?group=category&q=<%= encodeURIComponent(q) %>">Category</a>
+        </div>
+      </div>
+
+      <p class="pub-results-count">
+        <strong><%= total %></strong> drug<%= total === 1 ? '' : 's' %>
+        in <strong><%= branches.length %></strong>
+        <%= groupBy === 'source' ? 'derivation group' : 'category' %><%= branches.length === 1 ? '' : 's' %>
+        <% if (q) { %> matching <em><%= q %></em><% } %>
+      </p>
+
+      <% if (!branches.length) { %>
+        <div class="pub-empty">
+          <i class="bi bi-diagram-3"></i>
+          <h3>Nothing found</h3>
+          <p>No drug matches “<%= q %>”.</p>
+          <a class="pub-cta pub-cta-gold" href="/materia-medica">Show the full tree</a>
+        </div>
+      <% } %>
+
+      <!-- ── The tree ─────────────────────────────────────────────────── -->
+      <div class="mm-tree">
+        <% branches.forEach((branch, bi) => { %>
+        <details class="mm-branch" <%= (bi === 0 || q) ? 'open' : '' %>>
+          <summary>
+            <i class="bi bi-chevron-right mm-caret"></i>
+            <span class="mm-branch-name"><%= branch.name %></span>
+            <span class="mm-count"><%= branch.count %></span>
+          </summary>
+
+          <% branch.groups.forEach(group => { %>
+          <div class="mm-group">
+            <h4 class="mm-group-name">
+              <i class="bi bi-arrow-return-right"></i><%= group.name %>
+              <em><%= group.drugs.length %></em>
+            </h4>
+            <div class="mm-leaves">
+              <% group.drugs.forEach(d => { %>
+              <a class="mm-leaf" href="/materia-medica/<%= d.drug_id %>">
+                <div class="mm-leaf-main">
+                  <strong><%= d.generic_name || d.name %></strong>
+                  <% if (d.botanical_name) { %><em><%= d.botanical_name %></em><% } %>
+                </div>
+                <div class="mm-leaf-tags">
+                  <% if (d.preparation_class) { %>
+                  <span class="mm-tag <%= d.preparation_class.startsWith('Compound') ? 'mm-tag-compound' : '' %>">
+                    <%= d.preparation_class.startsWith('Compound') ? 'Compound' : 'Single' %>
+                  </span>
+                  <% } %>
+                  <% if (d.dosage_form) { %><span class="mm-tag"><%= d.dosage_form %></span><% } %>
+                  <% if (d.brand_count) { %>
+                  <span class="mm-tag mm-tag-brand"><i class="bi bi-tag"></i><%= d.brand_count %></span>
+                  <% } %>
+                </div>
+              </a>
+              <% }) %>
+            </div>
+          </div>
+          <% }) %>
+        </details>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <%- include('../partials/public-footer', { references }) %>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

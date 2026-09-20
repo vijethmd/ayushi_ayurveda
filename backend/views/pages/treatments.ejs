@@ -21,7 +21,7 @@
             <tbody>
               <% treatments.forEach(t=>{ const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
               <tr>
-                <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=t.patient_name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=t.patient_name%></div><small class="monospace text-muted"><%=t.patient_code%></small></div></div></td>
+                <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=t.patient_name.charAt(0)%></div><div><div style="font-size: 15px;font-weight:500;"><%=t.patient_name%></div><small class="monospace text-muted"><%=t.patient_code%></small></div></div></td>
                 <td><small><%=t.disease_name%></small></td>
                 <td><small><%=t.doctor_name%></small></td>
                 <td><span class="status-badge <%=sc[t.status]||''%>"><%=t.status%></span></td>

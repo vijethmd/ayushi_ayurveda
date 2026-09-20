@@ -4,6 +4,8 @@ node_modules/
 
 # Environment
 backend/.env
+backend/.env.*
+!backend/.env.example
 .env
 
 # Logs
@@ -12,3 +14,10 @@ npm-debug.log*
 
 # OS
 .DS_Store
+
+# Uploaded clinical documents (patient data — never committed)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Database dumps (generated — regenerate with mysqldump; may contain data)
+backend/sql/dump/*.sql

@@ -44,20 +44,26 @@
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
               <span class="fw-semibold">Recent Patients</span>
-              <a href="/patients?my_patients=true" class="btn btn-sm btn-outline-primary" style="font-size:11px;">View All</a>
+              <a href="/patients?my_patients=true" class="btn btn-sm btn-outline-primary" style="font-size: 13px;">View All</a>
             </div>
             <div class="table-responsive">
               <table class="table table-hover align-middle mb-0">
-                <thead><tr><th>Patient</th><th>Disease</th><th>Status</th></tr></thead>
+                <thead><tr><th>Patient</th><th>Disease</th><th>Status</th><th></th></tr></thead>
                 <tbody>
                   <% (data.recentPatients||[]).forEach(p=>{ const sc={Ongoing:'badge-ongoing',Improved:'badge-improved',Cured:'badge-cured','Left Treatment':'badge-left'}; %>
-                  <tr class="cursor-pointer" onclick="location.href='/patients/<%=p.patient_id%>'">
-                    <td><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=p.name.charAt(0)%></div><div><div style="font-size:13px;font-weight:500;"><%=p.name%></div><small class="text-muted"><%=p.age%>y <%=p.gender.charAt(0)%></small></div></div></td>
-                    <td><small><%=p.disease_name%></small></td>
+                  <tr>
+                    <td class="cursor-pointer" onclick="location.href='/patients/<%=p.patient_id%>'"><div class="d-flex align-items-center gap-2"><div class="pat-avatar"><%=p.name.charAt(0)%></div><div><div style="font-size: 15px;font-weight:500;"><%=p.name%></div><small class="text-muted"><%=p.age%>y <%=p.gender.charAt(0)%></small></div></div></td>
+                    <td class="cursor-pointer" onclick="location.href='/patients/<%=p.patient_id%>'"><small><%=p.disease_name%></small></td>
                     <td><span class="status-badge <%=sc[p.status]||''%>"><%=p.status%></span></td>
+                    <td class="text-end">
+                      <button class="btn btn-sm btn-outline-success dash-followup-btn" title="Add Follow-up"
+                        data-tid="<%=p.treatment_id%>" data-name="<%=p.name%>" data-disease="<%=p.disease_name%>">
+                        <i class="bi bi-calendar-plus"></i>
+                      </button>
+                    </td>
                   </tr>
                   <% }) %>
-                  <% if (!data.recentPatients?.length) { %><tr><td colspan="3" class="text-center py-3 text-muted">No patients yet</td></tr><% } %>
+                  <% if (!data.recentPatients?.length) { %><tr><td colspan="4" class="text-center py-3 text-muted">No patients yet</td></tr><% } %>
                 </tbody>
               </table>
             </div>
@@ -69,8 +75,8 @@
             <div class="card-body p-0" style="max-height:260px;overflow-y:auto;">
               <% (data.upcomingFollowups||[]).forEach(f=>{ %>
               <div class="d-flex gap-2 px-3 py-2 border-bottom align-items-start">
-                <div class="pat-avatar" style="background:#e3f2fd;color:#1565c0;"><i class="bi bi-calendar-check" style="font-size:14px;"></i></div>
-                <div><div style="font-size:13px;font-weight:500;"><%=f.patient_name%></div><div class="text-muted" style="font-size:11px;"><%=f.disease_name%> &middot; <%=f.followup_date%></div></div>
+                <div class="pat-avatar" style="background:#e3f2fd;color:#1565c0;"><i class="bi bi-calendar-check" style="font-size: 16px;"></i></div>
+                <div><div style="font-size: 15px;font-weight:500;"><%=f.patient_name%></div><div class="text-muted" style="font-size: 13px;"><%=f.disease_name%> &middot; <%=f.followup_date%></div></div>
               </div>
               <% }) %>
               <% if (!data.upcomingFollowups?.length) { %><p class="text-muted text-center py-4 mb-0 small">No follow-ups this week 🎉</p><% } %>
@@ -81,7 +87,37 @@
     </div>
   </div>
 </div>
+<!-- Add Follow-up Modal (dashboard) -->
+<div class="modal fade" id="dashFollowupModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="dashFollowupTitle">Add Follow-Up</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="dashFollowupForm">
+        <input type="hidden" name="treatment_id" id="dashFollowupTid"/>
+        <div class="modal-body row g-2">
+          <div class="col-12"><label class="form-label">Follow-up Date</label><input type="date" name="followup_date" class="form-control" value="<%=new Date().toISOString().split('T')[0]%>" required/></div>
+          <div class="col-12"><label class="form-label">Symptoms / Response Observed</label><textarea name="symptoms" class="form-control" rows="2" placeholder="e.g. Good response, stiffness reduced; or symptoms unchanged"></textarea></div>
+          <div class="col-12"><label class="form-label">Side Effects</label><input type="text" name="side_effects" class="form-control" placeholder="None"/></div>
+          <div class="col-12"><label class="form-label">Doctor Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Add Follow-Up</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
+// Add Follow-up from the dashboard patient list
+document.querySelectorAll('.dash-followup-btn').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('dashFollowupTid').value = b.dataset.tid;
+  document.getElementById('dashFollowupTitle').textContent = 'Add Follow-Up — ' + b.dataset.name + ' (' + b.dataset.disease + ')';
+  openModal('dashFollowupModal');
+}));
+ajaxForm('dashFollowupForm', '/api/followups', 'POST', () => { closeModal('dashFollowupModal'); location.reload(); });
+
 const pie=[{s:'Active',v:<%=data.stats.active||0%>},{s:'Cured',v:<%=data.stats.cured||0%>},{s:'Dropout',v:<%=data.stats.dropout||0%>}].filter(x=>x.v>0);
 if(pie.length) new Chart(document.getElementById('myPie'),{type:'doughnut',data:{labels:pie.map(x=>x.s),datasets:[{data:pie.map(x=>x.v),backgroundColor:['#4a7c59','#27ae60','#e74c3c'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
 const dis=<%- JSON.stringify(data.myDiseases||[]) %>;
