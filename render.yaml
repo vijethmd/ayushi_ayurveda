@@ -1,0 +1,42 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# The database is NOT defined here: it already lives on Aiven. Set DATABASE_URL
+# in the Render dashboard (marked sync:false below so it is never committed).
+services:
+  - type: web
+    name: ayushi
+    runtime: node
+    plan: free
+    region: singapore          # closest Render region to an Indian audience
+    rootDir: backend           # the deployable app lives here
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render's filesystem is ephemeral — keep uploaded documents in the
+      # database so a redeploy cannot lose them.
+      - key: STORAGE_DRIVER
+        value: db
+      # Aiven signs with a per-project CA; the cert is committed at this path.
+      - key: DB_SSL_CA
+        value: certs/aiven-ca.pem
+      # Secrets — set these in the dashboard, never in this file.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true    # Render generates a strong value on first deploy
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

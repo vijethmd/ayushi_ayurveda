@@ -23,13 +23,20 @@ const ALLOWED = {
 const ACCEPT_ATTR = '.pdf,.doc,.docx,.jpg,.jpeg,.png';
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
-const storage = multer.diskStorage({
+// Where uploaded bytes go. On a host with an ephemeral filesystem (Render,
+// Fly, Heroku) 'db' keeps documents alongside their Attachments row so a
+// redeploy cannot lose them; 'disk' is the default for local development.
+const DRIVER = (process.env.STORAGE_DRIVER || (process.env.RENDER ? 'db' : 'disk')).toLowerCase();
+
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = ALLOWED[file.mimetype] || path.extname(file.originalname).toLowerCase();
     cb(null, `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`);
   },
 });
+
+const storage = DRIVER === 'db' ? multer.memoryStorage() : diskStorage;
 
 const upload = multer({
   storage,
@@ -55,4 +62,4 @@ const removeFile = (storedName) => {
   fs.unlink(path.join(UPLOAD_DIR, storedName), () => {});
 };
 
-module.exports = { upload, handle, removeFile, UPLOAD_DIR, ALLOWED, ACCEPT_ATTR, MAX_BYTES };
+module.exports = { upload, handle, removeFile, UPLOAD_DIR, ALLOWED, ACCEPT_ATTR, MAX_BYTES, DRIVER };
